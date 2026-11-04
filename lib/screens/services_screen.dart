@@ -28,6 +28,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
       return;
     }
 
+    if (index == 2) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Esta sección estará disponible próximamente.'),
