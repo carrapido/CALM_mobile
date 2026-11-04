@@ -92,6 +92,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _onNavTap(int index) {
     if (index == 0) {
       Navigator.of(context).pushReplacementNamed(AppRoutes.services);
+    } else if (index != _perfilIndex) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta sección estará disponible próximamente.'),
+        ),
+      );
     }
   }
 

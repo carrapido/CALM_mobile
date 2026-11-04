@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/service_item.dart';
+import '../routes/app_routes.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
@@ -15,8 +17,23 @@ class ServicesScreen extends StatefulWidget {
 }
 
 class _ServicesScreenState extends State<ServicesScreen> {
-  int _currentNavIndex = 0;
+  final int _currentNavIndex = 0;
   final List<ServiceItem> services = ServiceItem.mockServices;
+
+  void _onNavTap(int index) {
+    if (index == _currentNavIndex) return;
+
+    if (index == 3) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.profile);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esta sección estará disponible próximamente.'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +41,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
       backgroundColor: AppColors.surfaceCanvas,
       appBar: TopAppBarWidget(
         onHelpPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ayuda del Taller')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Ayuda del Taller')));
         },
       ),
       body: Center(
@@ -35,10 +51,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
             children: [
-              Text(
-                AppConstants.servicesTitle,
-                style: AppText.headlineXlMobile,
-              ),
+              Text(AppConstants.servicesTitle, style: AppText.headlineXlMobile),
               const SizedBox(height: 4),
               Text(
                 AppConstants.servicesSubtitle,
@@ -87,11 +100,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       ),
       bottomNavigationBar: BottomNavBarWidget(
         currentIndex: _currentNavIndex,
-        onTap: (index) {
-          setState(() {
-            _currentNavIndex = index;
-          });
-        },
+        onTap: _onNavTap,
       ),
     );
   }
