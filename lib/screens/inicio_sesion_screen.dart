@@ -6,12 +6,11 @@ import '../themes/app_theme.dart';
 import '../utils/telefono_formatter.dart';
 import '../widgets/boton_taller.dart';
 import '../widgets/campo_taller.dart';
+import '../routes/app_routes.dart';
 
 class InicioSesionScreen extends StatefulWidget {
   const InicioSesionScreen({super.key, this.onIngresar});
 
-  /// Se llama con el teléfono (solo dígitos) y el número de ticket
-  /// cuando el formulario es válido. Aquí conectas tu API / navegación.
   final void Function(String telefono, String ticket)? onIngresar;
 
   @override
@@ -35,8 +34,8 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
     final telefono = _telefonoCtrl.text.replaceAll(RegExp(r'\D'), '');
     final ticket = _ticketCtrl.text.trim();
     widget.onIngresar?.call(telefono, ticket);
-    // TODO: validar con tu backend y navegar, por ejemplo:
-    // Navigator.of(context).pushReplacement(...);
+
+    Navigator.of(context).pushReplacementNamed(AppRoutes.services);
   }
 
   void _mostrarAyuda() {
@@ -210,8 +209,6 @@ class _BarraSuperior extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-
-/// Insignia amarilla tipo etiqueta de taller ("CALM").
 class _InsigniaCalm extends StatelessWidget {
   const _InsigniaCalm();
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'screens/inicio_sesion_screen.dart';
+import 'routes/app_routes.dart';
 import 'themes/app_theme.dart';
 
 void main() {
@@ -16,7 +15,8 @@ class MyApp extends StatelessWidget {
       title: 'Calm Mobil',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const InicioSesionScreen(),
+      initialRoute: AppRoutes.initial, // Inicia en la ruta inicial ('/')
+      routes: AppRoutes.routes,
     );
   }
 }

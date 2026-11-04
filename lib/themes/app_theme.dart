@@ -26,6 +26,8 @@ class AppText {
   static TextStyle get labelLg => _base(16, 22, FontWeight.w700);
   static TextStyle get labelMd => _base(14, 20, FontWeight.w600);
   static TextStyle get labelSm => _base(12, 16, FontWeight.w600);
+    static TextStyle get headlineLg => _base(24, 32, FontWeight.w800);
+  static TextStyle get headlineMd => _base(20, 28, FontWeight.w700);
 }
 
 class AppTheme {
