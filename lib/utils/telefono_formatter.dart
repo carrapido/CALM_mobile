@@ -1,5 +1,8 @@
 import 'package:flutter/services.dart';
 
+/// The digits of [text], without spaces or any other character.
+String digitsOf(String text) => text.replaceAll(RegExp(r'\D'), '');
+
 /// Da formato "998 123 4567" mientras se escribe (máx. 10 dígitos).
 class TelefonoFormatter extends TextInputFormatter {
   @override
@@ -7,7 +10,7 @@ class TelefonoFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    var d = newValue.text.replaceAll(RegExp(r'\D'), '');
+    var d = digitsOf(newValue.text);
     if (d.length > 10) d = d.substring(0, 10);
 
     final buf = StringBuffer();

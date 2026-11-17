@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<body>
+<x-dc>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; background: #F2F4F7; color: #0F172A; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <main style="height: 100%; overflow-y: auto; box-sizing: border-box; padding: 8px 16px 34px; display: flex; flex-direction: column">
+    <div style="flex: none; height: 44px; display: flex; align-items: center; justify-content: space-between">
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.08em; color: #45464D">
+        <svg M8.12 8.12 12 12M20 4 8.12 15.88M14.8 14/>
+        <span>COSTURANDO A LA MEDIDA</span>
+      </span>
+      <button type="button" aria-label="Ayuda" sc-camel-on-click="{{ openHelp }}" style="width: 44px; height: 44px; margin-right: -6px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; color: #0F172A; ">
+        <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.07); border-radius: 50%">
+          <svg M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01/>
+        </span>
+      </button>
+    </div>
+    <h1 style="margin: 10px 4px 4px; font-size: 34px; line-height: 40px; font-weight: 800; letter-spacing: -0.02em">Tus pedidos</h1>
+    <p style="margin: 0 4px 22px; font-size: 17px; line-height: 24px; font-weight: 500; color: #45464D">Entra con tu celular y tu NIP. El NIP es tu contraseña</p>
+    <div role="group" aria-label="Datos para entrar" style="flex: none; overflow: hidden; background: #FFFFFF; border-radius: 16px">
+      <label style="display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 16px">
+        <span style="flex: none; width: 76px; font-size: 17px; line-height: 22px; font-weight: 600; color: {{ phoneLabelColor }}">Celular</span>
+        <input type="tel" placeholder="998 123 4567" value="{{ phone }}" sc-camel-on-change="{{ onPhone }}" aria-invalid="{{ phoneInvalid }}" aria-describedby="entrada-pie" style="flex: 1; min-width: 0; height: 54px; padding: 0; border: 0; outline: none; background: transparent; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600">
+      </label>
+      <span style="display: block; height: 1px; margin-left: 16px; background: rgba(15, 23, 42, 0.1)"></span>
+      <label style="display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 16px">
+        <span style="flex: none; width: 76px; font-size: 17px; line-height: 22px; font-weight: 600; color: {{ nipLabelColor }}">NIP</span>
+        <input type="password" maxlength="4" placeholder="4 dígitos" value="{{ nip }}" sc-camel-on-change="{{ onNip }}" aria-invalid="{{ nipInvalid }}" aria-describedby="entrada-pie" ref="{{ setNipInput }}" style="flex: 1; min-width: 0; height: 54px; padding: 0; border: 0; outline: none; background: transparent; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600">
+      </label>
+    </div>
+    <sc-if value="{{ hasError }}">
+      <p id="entrada-pie" role="alert" style="margin: 8px 16px 0; font-size: 13px; line-height: 18px; font-weight: 700; color: #B91C1C">{{ errorMessage }}</p>
+    </sc-if>
+    <div style="flex: none; margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 4px">
+      <sc-if value="{{ hasDestination }}">
+        <a href="{{ destination }}" style="width: 100%; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; text-decoration: none; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Ver mis pedidos</a>
+      </sc-if>
+      <sc-if value="{{ hasNoDestination }}">
+        <button type="button" sc-camel-on-click="{{ onTry }}" style="width: 100%; min-height: 52px; background: #0F172A; color: #FFFFFF; border: 0; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Ver mis pedidos</button>
+      </sc-if>
+      <button type="button" sc-camel-on-click="{{ openHelp }}" style="min-height: 44px; padding: 0 12px; background: none; border: 0; color: #0F172A; font-size: 15px; line-height: 20px; font-weight: 600; ">Olvidé mi NIP</button>
+    </div>
+    <div style="flex: 1; min-height: 24px"></div>
+    <p style="margin: 0 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">¿Primera vez?</p>
+    <a href="AppleServicios.dc.html" style="flex: none; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; background: #FFFFFF; border-radius: 16px; color: #0F172A; text-decoration: none; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.98)">
+      <span style="flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 8px">
+        <svg M16 2v4M8 2v4M3 10h18/>
+      </span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+        <span style="font-size: 17px; line-height: 22px; font-weight: 600">Agenda una cita</span>
+        <span style="font-size: 13px; line-height: 18px; color: #45464D">Eliges tus arreglos y creas tu NIP.</span>
+      </span>
+      <svg m9 18 6-6-6-6/>
+    </a>
+  </main>
+  <sc-if value="{{ helpOpen }}">
+    <div style="position: absolute; inset: 0; z-index: 5">
+      <dc-import name="AppleAyuda" on-cerrar="{{ closeHelp }}"></dc-import>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state = { phone: '', nip: '', showErrors: false, helpOpen: false };
+  // The demo client: the phone identifies the account and the NIP proves it is theirs.
+  demoPhoneDigits = '9981234567';
+  demoNip = '2580';
+  ordersScreen = 'ApplePedidos.dc.html';
+  renderVals() {
+    const destination = this.matchingDestination();
+    const missingPhoneDigits = 10 - this.digitsOf(this.state.phone).length;
+    const message = this.state.showErrors ? this.errorMessage(missingPhoneDigits, destination) : '';
+    const phoneInvalid = message !== '' && missingPhoneDigits > 0;
+    const nipInvalid = message !== '' && !phoneInvalid;
+    return {
+      phone: this.state.phone,
+      nip: this.state.nip,
+      destination: destination ?? '',
+      hasDestination: destination !== undefined,
+      hasNoDestination: destination === undefined,
+      hasError: message !== '',
+      errorMessage: message,
+      phoneInvalid,
+      nipInvalid,
+      phoneLabelColor: phoneInvalid ? '#B91C1C' : '#0F172A',
+      nipLabelColor: nipInvalid ? '#B91C1C' : '#0F172A',
+      helpOpen: this.state.helpOpen,
+      onPhone: this.onPhone,
+      onNip: this.onNip,
+      onTry: this.onTry,
+      openHelp: this.openHelp,
+      closeHelp: this.closeHelp,
+      setNipInput: this.setNipInput,
+    };
+  }
+  matchingDestination() {
+    const isPhoneCorrect = this.digitsOf(this.state.phone) === this.demoPhoneDigits;
+    const isNipCorrect = this.state.nip === this.demoNip;
+    return isPhoneCorrect && isNipCorrect ? this.ordersScreen : undefined;
+  }
+  // One message, in the same place as the hint, for whichever field needs attention first.
+  errorMessage(missingPhoneDigits, destination) {
+    if (missingPhoneDigits === 10) return 'Escribe tu celular a 10 dígitos.';
+    if (missingPhoneDigits > 0) return 'Al celular le ' + this.missingText(missingPhoneDigits) + '.';
+    if (this.state.nip === '') return 'Escribe tu NIP de 4 dígitos.';
+    if (this.state.nip.length < 4) return 'Al NIP le ' + this.missingText(4 - this.state.nip.length) + '.';
+    if (destination === undefined) return 'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.';
+    return '';
+  }
+  missingText(missingDigits) {
+    return missingDigits === 1 ? 'falta 1 dígito' : 'faltan ' + missingDigits + ' dígitos';
+  }
+  onPhone = (event) => {
+    const phone = this.groupPhoneDigits(event.target.value);
+    const isNowComplete = this.digitsOf(phone).length === 10 && this.digitsOf(this.state.phone).length < 10;
+    this.setState({ phone, showErrors: false });
+    if (isNowComplete && this.nipInput) this.nipInput.focus();
+  };
+  onNip = (event) => this.setState({ nip: event.target.value.replace(/\D/g, '').slice(0, 4), showErrors: false });
+  onTry = () => this.setState({ showErrors: true });
+  openHelp = () => this.setState({ helpOpen: true });
+  closeHelp = () => this.setState({ helpOpen: false });
+  setNipInput = (element) => { this.nipInput = element; };
+  digitsOf(text) {
+    return text.replace(/\D/g, '');
+  }
+  groupPhoneDigits(text) {
+    const digits = this.digitsOf(text).slice(0, 10);
+    return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6)].filter(Boolean).join(' ');
+  }
+}
+</script>
+</body></html>

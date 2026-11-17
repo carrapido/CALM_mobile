@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<body>
+<x-dc>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; color: #0F172A; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <button type="button" aria-label="Cerrar ayuda" sc-camel-on-click="{{ close }}" style="position: absolute; inset: 0; padding: 0; border: 0; background: rgba(15, 23, 42, 0.35); opacity: {{ scrimOpacity }}; transition: opacity {{ motionDuration }} ease-out; "></button>
+  <div role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo" style="position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 34px; background: #F2F4F7; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.12); opacity: {{ sheetOpacity }}; transform: {{ sheetTransform }}; transition: transform {{ motionDuration }} cubic-bezier(0.32, 0.72, 0, 1), opacity {{ motionDuration }} ease-out">
+    <span style="align-self: center; width: 36px; height: 5px; border-radius: 3px; background: #C3C8D0"></span>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+      <h2 id="ayuda-titulo" style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 800; letter-spacing: -0.01em">¿Te ayudamos?</h2>
+      <button type="button" sc-camel-on-click="{{ close }}" style="min-height: 44px; padding: 0 4px; background: none; border: 0; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 700; ">Listo</button>
+    </div>
+    <div role="group" aria-label="Contactar al taller" style="overflow: hidden; background: #FFFFFF; border-radius: 16px">
+      <button type="button" style="width: 100%; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 14px; background: #FFFFFF; border: 0; color: #0F172A; text-align: left; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+        <span style="flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 8px">
+          <svg M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 />
+        </span>
+        <span style="flex: 1; font-size: 17px; line-height: 22px; font-weight: 600">Escribir por WhatsApp</span>
+        <svg m9 18 6-6-6-6/>
+      </button>
+      <span style="display: block; height: 1px; margin-left: 58px; background: rgba(15, 23, 42, 0.1)"></span>
+      <button type="button" style="width: 100%; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 14px; background: #FFFFFF; border: 0; color: #0F172A; text-align: left; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+        <span style="flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 8px">
+          <svg M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0/>
+        </span>
+        <span style="flex: 1; font-size: 17px; line-height: 22px; font-weight: 600">Llamar al taller</span>
+        <svg m9 18 6-6-6-6/>
+      </button>
+      <span style="display: block; height: 1px; margin-left: 58px; background: rgba(15, 23, 42, 0.1)"></span>
+      <button type="button" style="width: 100%; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 14px; background: #FFFFFF; border: 0; color: #0F172A; text-align: left; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+        <span style="flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 8px">
+          <svg M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1/>
+        </span>
+        <span style="flex: 1; font-size: 17px; line-height: 22px; font-weight: 600">Cómo llegar</span>
+        <svg m9 18 6-6-6-6/>
+      </button>
+    </div>
+    <p style="margin: 0 4px; font-size: 13px; line-height: 18px; color: #45464D">Taller Cancún · [DIRECCIÓN DEL TALLER] · 10:00 a 18:00</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;onCerrar&quot;:{&quot;editor&quot;:null},&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state = { shown: false, closing: false };
+  renderVals() {
+    const isIn = this.state.shown && !this.state.closing;
+    const reduceMotion = this.prefersReducedMotion();
+    return {
+      motionDuration: this.state.closing ? '240ms' : '420ms',
+      scrimOpacity: isIn ? 1 : 0,
+      sheetTransform: isIn || reduceMotion ? 'translateY(0)' : 'translateY(100%)',
+      sheetOpacity: isIn || !reduceMotion ? 1 : 0,
+      close: this.close,
+    };
+  }
+  // Mount off-screen, then slide in on the next frames so the transition has a start value.
+  componentDidMount() {
+    this.enterFrame = requestAnimationFrame(() => {
+      this.enterFrame = requestAnimationFrame(() => this.setState({ shown: true }));
+    });
+  }
+  // The exit is faster than the entrance; the parent unmounts the sheet afterwards.
+  close = () => {
+    if (this.state.closing) return;
+    this.setState({ closing: true });
+    this.closeTimer = setTimeout(() => this.finishClosing(), 240);
+  };
+  finishClosing() {
+    if (this.props.onCerrar) this.props.onCerrar();
+    else this.setState({ closing: false });
+  }
+  prefersReducedMotion() {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.enterFrame);
+    clearTimeout(this.closeTimer);
+  }
+}
+</script>
+</body></html>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es-MX">
+<body>
+<x-dc>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F2F4F7; color: #0F172A; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <main style="height: 100%; overflow-y: auto; box-sizing: border-box; padding: 8px 16px 112px; display: flex; flex-direction: column">
+    <div style="flex: none; height: 44px; display: flex; align-items: center; justify-content: space-between">
+      <a href="ApplePedidos.dc.html" style="min-height: 44px; margin-left: -8px; display: flex; align-items: center; gap: 2px; padding: 0 8px; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600; text-decoration: none">
+        <svg m15 18-6-6 6-6/>
+        <span>Pedidos</span>
+      </a>
+      <button type="button" aria-label="Ayuda" onClick="{{ openHelp }}" style="width: 44px; height: 44px; margin-right: -6px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; color: #0F172A; ">
+        <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.07); border-radius: 50%">
+          <svg M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01/>
+        </span>
+      </button>
+    </div>
+    <h1 style="margin: 0 4px; font-size: 34px; line-height: 40px; font-weight: 800; letter-spacing: -0.02em">Pedido</h1>
+    <p style="margin: 2px 4px 18px; font-size: 17px; line-height: 22px; font-weight: 500; color: #45464D">Ticket {{ ticket }}</p>
+    <section aria-label="Estado de tu ticket" style="flex: none; display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06)">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <p style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 600; color: #45464D">{{ work }}</p>
+        <h2 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 800; letter-spacing: -0.015em">{{ headline }}</h2>
+      </div>
+      <sc-if value="{{ isOrder }}">
+        <ol aria-label="Avance del pedido" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px">
+          <sc-for list="{{ steps }}" as="step" hint-placeholder-count="4">
+            <li aria-current="{{ step.ariaCurrent }}" style="display: flex; flex-direction: column; gap: 6px">
+              <span style="height: 6px; border-radius: 3px; background: {{ step.bar }}"></span>
+              <span style="font-size: 12px; line-height: 16px; font-weight: {{ step.weight }}; color: {{ step.color }}">{{ step.label }}</span>
+            </li>
+          </sc-for>
+        </ol>
+      </sc-if>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-if value="{{ canSayOnTheWay }}">
+          <button type="button" onClick="{{ onOnTheWay }}" style="width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; background: #0F172A; color: #FFFFFF; border: 0; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">
+            <svg m3 11 19-9-9 19-2-8-8-2z/>
+            <span>Voy en camino</span>
+          </button>
+        </sc-if>
+        <sc-if value="{{ isOnTheWay }}">
+          <p role="status" style="min-height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 0 12px; background: rgba(15, 23, 42, 0.06); border-radius: 14px; font-size: 15px; line-height: 20px; font-weight: 700">
+            <svg M20 6 9 17l-5-5/>
+            <span>El taller ya sabe que vas en camino</span>
+          </p>
+        </sc-if>
+        <sc-if value="{{ canOpenDirections }}">
+          <button type="button" onClick="{{ onDirections }}" style="width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(15, 23, 42, 0.06); color: #0F172A; border: 0; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">
+            <svg M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1/>
+            <span>Cómo llegar</span>
+          </button>
+        </sc-if>
+        <sc-if value="{{ directionsOpened }}">
+          <p role="status" style="min-height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 0 12px; background: rgba(15, 23, 42, 0.06); border-radius: 14px; font-size: 15px; line-height: 20px; font-weight: 700">
+            <svg M20 6 9 17l-5-5/>
+            <span>Abrimos Mapas con la dirección</span>
+          </p>
+        </sc-if>
+        <sc-if value="{{ showsWriteToWorkshop }}">
+          <button type="button" onClick="{{ openHelp }}" style="width: 100%; min-height: 52px; background: rgba(15, 23, 42, 0.06); color: #0F172A; border: 0; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Escribir al taller</button>
+        </sc-if>
+      </div>
+    </section>
+    <h2 style="margin: 24px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">{{ amountSection }}</h2>
+    <dl style="flex: none; margin: 0; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: #FFFFFF; border-radius: 16px">
+      <dt style="font-size: 17px; line-height: 22px; font-weight: 500">{{ amountLabel }}</dt>
+      <dd style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 800">{{ amount }}</dd>
+    </dl>
+    <sc-if value="{{ canCancel }}">
+      <button type="button" onClick="{{ askToCancel }}" style="flex: none; margin-top: 24px; width: 100%; min-height: 52px; background: #FFFFFF; color: #DC2626; border: 0; border-radius: 16px; font-size: 17px; line-height: 22px; font-weight: 600; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">Cancelar cita</button>
+    </sc-if>
+    <sc-if value="{{ cancelNeedsWorkshop }}">
+      <p style="margin: 10px 16px 0; font-size: 13px; line-height: 18px; color: #45464D">Faltan menos de 24 horas para tu cita: para cancelarla, escríbele al taller.</p>
+    </sc-if>
+    <h2 style="margin: 24px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">Más</h2>
+    <div style="flex: none; overflow: hidden; background: #FFFFFF; border-radius: 16px">
+      <a href="AppleServicios.dc.html" style="min-height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 14px; color: #0F172A; text-decoration: none; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+        <span style="flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 8px">
+          <svg M16 2v4M8 2v4M3 10h18/>
+        </span>
+        <span style="flex: 1; font-size: 17px; line-height: 22px; font-weight: 600">Agendar otra cita</span>
+        <svg m9 18 6-6-6-6/>
+      </a>
+    </div>
+  </main>
+  <nav aria-label="Principal" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; box-sizing: border-box; padding: 0 12px 34px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; background: {{ materialBackground }}; backdrop-filter: {{ materialBlur }}; -webkit-backdrop-filter: {{ materialBlur }}; border-top: 1px solid rgba(15, 23, 42, 0.08)">
+    <a href="ApplePedidos.dc.html" aria-current="page" style="display: flex; justify-content: center; color: #0F172A; text-decoration: none">
+      <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; background: rgba(15, 23, 42, 0.09); border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 800">
+        <svg M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V M8 8h8M8 12h8M8 16h/>
+        <span>Pedidos</span>
+      </span>
+    </a>
+    <a href="AppleServicios.dc.html" style="display: flex; justify-content: center; color: #45464D; text-decoration: none">
+      <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600">
+        <svg M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0  M7.5 7.5h.01/>
+        <span>Servicios</span>
+      </span>
+    </a>
+    <a href="ApplePerfil.dc.html" style="display: flex; justify-content: center; color: #45464D; text-decoration: none">
+      <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600">
+        <svg M4 21a8 8 0 0 1 16 0/>
+        <span>Perfil</span>
+      </span>
+    </a>
+  </nav>
+  <sc-if value="{{ isConfirmingCancel }}">
+    <button type="button" aria-label="Conservar la cita" onClick="{{ keepAppointment }}" style="position: absolute; inset: 0; z-index: 4; padding: 0; border: 0; background: rgba(15, 23, 42, 0.35); opacity: {{ scrimOpacity }}; transition: opacity {{ motionDuration }} ease-out; "></button>
+    <div role="alertdialog" aria-modal="true" aria-labelledby="cancelar-titulo" aria-describedby="cancelar-detalle" style="position: absolute; left: 8px; right: 8px; bottom: 34px; z-index: 4; display: flex; flex-direction: column; gap: 8px; opacity: {{ sheetOpacity }}; transform: {{ sheetTransform }}; transition: transform {{ motionDuration }} cubic-bezier(0.32, 0.72, 0, 1), opacity {{ motionDuration }} ease-out">
+      <div style="overflow: hidden; background: rgba(255, 255, 255, 0.96); border-radius: 16px">
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 16px 16px 14px; text-align: center">
+          <h2 id="cancelar-titulo" style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">¿Cancelar tu cita?</h2>
+          <p id="cancelar-detalle" style="margin: 0; font-size: 13px; line-height: 18px; color: #45464D">Tu horario del jueves 5 a las 11:00 queda libre para alguien más.</p>
+        </div>
+        <span style="display: block; height: 1px; background: rgba(15, 23, 42, 0.1)"></span>
+        <a href="AppleEntrada.dc.html" style="min-height: 56px; display: flex; align-items: center; justify-content: center; color: #DC2626; font-size: 19px; line-height: 24px; font-weight: 600; text-decoration: none; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">Sí, cancelar la cita</a>
+      </div>
+      <button type="button" onClick="{{ keepAppointment }}" style="min-height: 56px; background: #FFFFFF; color: #0F172A; border: 0; border-radius: 16px; font-size: 19px; line-height: 24px; font-weight: 800; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">No, conservarla</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ helpOpen }}">
+    <div style="position: absolute; inset: 0; z-index: 5">
+      <dc-import name="AppleAyuda" on-cerrar="{{ closeHelp }}"></dc-import>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"status":{"editor":"enum","options":["appointment","received","inProgress","ready"],"default":"ready"},"puedeCancelar":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  state = {
+    isOnTheWay: false,
+    directionsOpened: false,
+    helpOpen: false,
+    confirmingCancel: false,
+    cancelShown: false,
+    cancelClosing: false,
+  };
+  // The panel's sample data for each state, without the client's name or number.
+  // The headline is the state; nothing else sits under it.
+  tickets = {
+    appointment: {
+      ticket: '0937',
+      work: 'Ajuste de cintura',
+      headline: 'Cita agendada',
+      amountSection: 'Cotización',
+      amountLabel: 'Cotización preliminar',
+      amount: '$180 MXN',
+    },
+    received: {
+      ticket: '2290',
+      work: 'Bastilla de 2 pantalones',
+      headline: 'Recibido',
+      amountSection: 'Pago',
+      amountLabel: 'Total, se paga en el taller',
+      amount: '$200 MXN',
+    },
+    inProgress: {
+      ticket: '5512',
+      work: 'Ajuste de vestido de novia',
+      headline: 'En proceso',
+      amountSection: 'Pago',
+      amountLabel: 'Total, se paga en el taller',
+      amount: '$900 MXN',
+    },
+    ready: {
+      ticket: '7720',
+      work: 'Cambio de cierre de chamarra',
+      headline: 'Listo para recoger',
+      amountSection: 'Pago',
+      amountLabel: 'Total, se paga en el taller',
+      amount: '$150 MXN',
+    },
+  };
+  renderVals() {
+    const status = this.props.status ?? 'ready';
+    const isReady = status === 'ready';
+    const isAppointment = status === 'appointment';
+    const mayCancel = this.props.puedeCancelar ?? true;
+    const showsDirections = isReady || isAppointment;
+    return {
+      ...this.tickets[status],
+      headline: isReady && this.state.isOnTheWay ? 'Vas en camino' : this.tickets[status].headline,
+      isOrder: !isAppointment,
+      steps: this.stepsUpTo(status),
+      canSayOnTheWay: isReady && !this.state.isOnTheWay,
+      isOnTheWay: isReady && this.state.isOnTheWay,
+      canOpenDirections: showsDirections && !this.state.directionsOpened,
+      directionsOpened: showsDirections && this.state.directionsOpened,
+      showsWriteToWorkshop: !showsDirections,
+      canCancel: isAppointment && mayCancel,
+      cancelNeedsWorkshop: isAppointment && !mayCancel,
+      isConfirmingCancel: this.state.confirmingCancel,
+      helpOpen: this.state.helpOpen,
+      ...this.cancelSheetMotion(),
+      ...this.material(),
+      onOnTheWay: this.onOnTheWay,
+      onDirections: this.onDirections,
+      askToCancel: this.askToCancel,
+      keepAppointment: this.keepAppointment,
+      openHelp: this.openHelp,
+      closeHelp: this.closeHelp,
+    };
+  }
+  // The bar fills up to the current step; the current label is the bold one.
+  stepsUpTo(status) {
+    const statuses = ['received', 'inProgress', 'ready', 'delivered'];
+    const labels = ['Recibido', 'En proceso', 'Listo', 'Entregado'];
+    const currentIndex = statuses.indexOf(status);
+    return labels.map((label, index) => ({ label, ...this.stepAppearance(index, currentIndex) }));
+  }
+  stepAppearance(index, currentIndex) {
+    if (index < currentIndex) return { bar: '#0F172A', color: '#45464D', weight: 500, ariaCurrent: 'false' };
+    if (index === currentIndex) return { bar: '#0F172A', color: '#0F172A', weight: 800, ariaCurrent: 'step' };
+    return { bar: 'rgba(15, 23, 42, 0.12)', color: '#45464D', weight: 500, ariaCurrent: 'false' };
+  }
+  // The action sheet rises from the bottom and leaves faster than it came.
+  cancelSheetMotion() {
+    const isIn = this.state.cancelShown && !this.state.cancelClosing;
+    const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return {
+      motionDuration: this.state.cancelClosing ? '240ms' : '420ms',
+      scrimOpacity: isIn ? 1 : 0,
+      sheetTransform: isIn || reduceMotion ? 'translateY(0)' : 'translateY(120%)',
+      sheetOpacity: isIn || !reduceMotion ? 1 : 0,
+    };
+  }
+  // Translucent tab bar, solid when the person asks for less transparency.
+  material() {
+    const isSolid = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-transparency: reduce)').matches;
+    return {
+      materialBackground: isSolid ? '#FFFFFF' : 'rgba(248, 250, 252, 0.78)',
+      materialBlur: isSolid ? 'none' : 'blur(20px) saturate(180%)',
+    };
+  }
+  // The API moves the order to 'onTheWay', which the panel shows as Cliente en camino.
+  onOnTheWay = () => this.setState({ isOnTheWay: true });
+  onDirections = () => this.setState({ directionsOpened: true });
+  openHelp = () => this.setState({ helpOpen: true });
+  closeHelp = () => this.setState({ helpOpen: false });
+  askToCancel = () => {
+    this.setState({ confirmingCancel: true, cancelShown: false, cancelClosing: false });
+    this.enterFrame = requestAnimationFrame(() => {
+      this.enterFrame = requestAnimationFrame(() => this.setState({ cancelShown: true }));
+    });
+  };
+  keepAppointment = () => {
+    if (this.state.cancelClosing) return;
+    this.setState({ cancelClosing: true });
+    this.closeTimer = setTimeout(() => {
+      this.setState({ confirmingCancel: false, cancelShown: false, cancelClosing: false });
+    }, 240);
+  };
+  componentWillUnmount() {
+    cancelAnimationFrame(this.enterFrame);
+    clearTimeout(this.closeTimer);
+  }
+}
+</script>
+</body>
+</html>
+

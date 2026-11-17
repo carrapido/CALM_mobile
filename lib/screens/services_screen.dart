@@ -1,14 +1,23 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/service_item.dart';
-import '../routes/app_routes.dart';
+import '../models/service_selection.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
-import '../widgets/bottom_nav_bar_widget.dart';
-import '../widgets/service_card_widget.dart';
-import '../widgets/top_app_bar_widget.dart';
+import '../widgets/app_tab_bar.dart';
+import '../widgets/group_footnote.dart';
+import '../widgets/inset_group.dart';
+import '../widgets/page_heading.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/schedule_sheet.dart';
+import '../widgets/section_header.dart';
+import '../widgets/tab_page.dart';
 
+/// Servicios: the client marks the repairs they need and moves on to choose a time.
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
 
@@ -17,272 +26,238 @@ class ServicesScreen extends StatefulWidget {
 }
 
 class _ServicesScreenState extends State<ServicesScreen> {
-  final int _currentNavIndex = 1; // 1 = Servicios
-  final List<ServiceItem> _services = ServiceItem.mockServices;
-
-  // Servicios seleccionados por ID (por defecto 1 y 2 como en la imagen)
-  final Set<String> _selectedServiceIds = {'1', '2'};
-  bool _prendaUrgente = true;
-
-  void _toggleService(String id) {
-    setState(() {
-      if (_selectedServiceIds.contains(id)) {
-        _selectedServiceIds.remove(id);
-      } else {
-        _selectedServiceIds.add(id);
-      }
-    });
-  }
-
-  double get _totalPrice {
-    double total = 0;
-    for (final service in _services) {
-      if (_selectedServiceIds.contains(service.id) && service.price != null) {
-        total += service.price!;
-      }
-    }
-    return total;
-  }
-
-  void _onNavTap(int index) {
-    if (index == _currentNavIndex) return;
-
-    if (index == 0) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
-      return;
-    }
-
-    if (index == 2) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.profile);
-      return;
-    }
-  }
+  final _selectedIds = <String>{};
+  bool _isUrgent = false;
 
   @override
   Widget build(BuildContext context) {
-    final int selectedCount = _selectedServiceIds.length;
+    final selection = _currentSelection();
+    return TabPage(
+      tab: AppTab.services,
+      floatingBar: selection.isEmpty
+          ? null
+          : _SelectionBar(selection: selection, onChooseSchedule: () => _openSchedule(selection)),
+      children: [
+        const PageHeading(AppConstants.servicesTitle, subtitle: AppConstants.servicesSubtitle),
+        InsetGroup(
+          children: [
+            for (final service in ServiceItem.catalog)
+              _ServiceRow(
+                service,
+                isSelected: _selectedIds.contains(service.id),
+                onTap: () => _toggle(service),
+              ),
+          ],
+        ),
+        const GroupFootnote(AppConstants.servicesDisclaimer),
+        const SectionHeader(AppConstants.extrasTitle),
+        InsetGroup(children: [_UrgentRow(isUrgent: _isUrgent, onChanged: _setUrgent)]),
+        const GroupFootnote(AppConstants.urgentNote),
+      ],
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: TopAppBarWidget(
-        showBrand: false,
-        onHelpPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ayuda con los servicios')),
-          );
-        },
+  // Marked services keep the catalog's order, whatever order they were tapped in.
+  ServiceSelection _currentSelection() {
+    return ServiceSelection(
+      services: [
+        for (final service in ServiceItem.catalog)
+          if (_selectedIds.contains(service.id)) service,
+      ],
+      isUrgent: _isUrgent,
+    );
+  }
+
+  void _openSchedule(ServiceSelection selection) => showScheduleSheet(context, selection);
+
+  void _toggle(ServiceItem service) {
+    setState(() {
+      final wasSelected = _selectedIds.remove(service.id);
+      if (!wasSelected) _selectedIds.add(service.id);
+    });
+  }
+
+  void _setUrgent(bool isUrgent) => setState(() => _isUrgent = isUrgent);
+}
+
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow(this.service, {required this.isSelected, required this.onTap});
+
+  final ServiceItem service;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        highlightColor: AppColors.pressedCell,
+        splashFactory: NoSplash.splashFactory,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
+            child: Row(
+              spacing: 12,
+              children: [
+                Expanded(child: Text(service.title, style: AppText.body)),
+                _PriceLabel(service.priceLabel, isQuoted: service.priceMxn == null),
+                _CheckCircle(isChecked: isSelected),
+              ],
+            ),
+          ),
+        ),
       ),
-      body: Stack(
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                children: [
-                  Text(
-                    AppConstants.servicesTitle,
-                    style: AppText.headlineXlMobile.copyWith(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    AppConstants.servicesSubtitle,
-                    style: AppText.bodyMd.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+    );
+  }
+}
 
-                  // Contenedor blanco con la lista de servicios
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceCanvas,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _services.length,
-                      separatorBuilder: (_, __) => const Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: AppColors.dividerColor,
-                      ),
-                      itemBuilder: (context, index) {
-                        final service = _services[index];
-                        return ServiceCardWidget(
-                          service: service,
-                          isSelected: _selectedServiceIds.contains(service.id),
-                          onTap: () => _toggleService(service.id),
-                        );
-                      },
-                    ),
-                  ),
+/// A price in bold ink; something still to be quoted, smaller and gray.
+class _PriceLabel extends StatelessWidget {
+  const _PriceLabel(this.label, {required this.isQuoted});
 
-                  const SizedBox(height: 14),
+  final String label;
+  final bool isQuoted;
 
-                  // Disclaimer
-                  Text(
-                    AppConstants.servicesDisclaimer,
-                    style: AppText.bodySm.copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 13,
-                    ),
-                  ),
+  @override
+  Widget build(BuildContext context) {
+    final style = isQuoted
+        ? AppText.subhead.copyWith(color: AppColors.onSurfaceVariant)
+        : AppText.body.copyWith(fontWeight: FontWeight.w700);
+    return Text(label, style: style);
+  }
+}
 
-                  const SizedBox(height: 24),
+class _CheckCircle extends StatelessWidget {
+  const _CheckCircle({required this.isChecked});
 
-                  // Sección "Extras"
-                  Text(
-                    AppConstants.extrasTitle,
-                    style: AppText.labelMd.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+  final bool isChecked;
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceCanvas,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          AppConstants.urgentTitle,
-                          style: AppText.bodyLg.copyWith(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          AppConstants.urgentSubtitle,
-                          style: AppText.bodyMd.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: _prendaUrgente,
-                          activeColor: Colors.white,
-                          activeTrackColor: AppColors.primaryDark,
-                          inactiveThumbColor: Colors.white,
-                          inactiveTrackColor: AppColors.borderUnselected,
-                          onChanged: (val) => setState(() => _prendaUrgente = val),
-                        ),
-                      ],
-                    ),
-                  ),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isChecked ? AppColors.ink : null,
+        border: Border.all(color: isChecked ? AppColors.ink : AppColors.checkRing, width: 2),
+      ),
+      child: isChecked ? const Icon(Icons.check_rounded, size: 15, color: Colors.white) : null,
+    );
+  }
+}
 
-                  const SizedBox(height: 8),
+class _UrgentRow extends StatelessWidget {
+  const _UrgentRow({required this.isUrgent, required this.onChanged});
 
-                  Text(
-                    AppConstants.urgentNote,
-                    style: AppText.bodySm.copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+  final bool isUrgent;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!isUrgent),
+      highlightColor: AppColors.pressedCell,
+      splashFactory: NoSplash.splashFactory,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 60),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
+          child: Row(
+            spacing: 12,
+            children: [
+              Expanded(child: Text(AppConstants.urgentTitle, style: AppText.body)),
+              const _PriceLabel(AppConstants.urgentSubtitle, isQuoted: true),
+              CupertinoSwitch(
+                value: isUrgent,
+                onChanged: onChanged,
+                activeTrackColor: AppColors.ink,
+                inactiveTrackColor: AppColors.switchOffTrack,
               ),
-            ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
 
-          // Barra / Tarjeta flotante inferior de resumen
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 12,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 448),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceCanvas,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '$selectedCount arreglos${_prendaUrgente ? ' · urgente' : ''}',
-                              style: AppText.labelLg.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: AppColors.primaryDark,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '\$${_totalPrice.toStringAsFixed(0)} MXN${_prendaUrgente ? ' + cargo por urgencia' : ''}',
-                              style: AppText.bodySm.copyWith(
-                                color: AppColors.textMuted,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: selectedCount == 0
-                            ? null
-                            : () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Ir a elegir horario')),
-                                );
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          AppConstants.btnElegirHorario,
-                          style: AppText.labelLg.copyWith(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+/// Floats above the tab bar while something is marked: what was chosen, its quote, and the next step.
+class _SelectionBar extends StatelessWidget {
+  const _SelectionBar({required this.selection, required this.onChooseSchedule});
+
+  final ServiceSelection selection;
+  final VoidCallback onChooseSchedule;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = BorderRadius.circular(20);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: shape,
+        boxShadow: const [
+          BoxShadow(color: AppColors.floatingShadow, offset: Offset(0, 10), blurRadius: 30),
         ],
       ),
-      bottomNavigationBar: BottomNavBarWidget(
-        currentIndex: _currentNavIndex,
-        onTap: _onNavTap,
+      child: ClipRRect(
+        borderRadius: shape,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+            decoration: BoxDecoration(
+              color: AppColors.barMaterial,
+              borderRadius: shape,
+              border: Border.all(color: AppColors.floatingBarEdge),
+            ),
+            child: Row(
+              spacing: 12,
+              children: [
+                Expanded(child: _texts()),
+                _ChooseScheduleButton(onPressed: onChooseSchedule),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _texts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(selection.summary, style: AppText.subhead.copyWith(fontWeight: FontWeight.w700)),
+        Text(selection.quote, style: AppText.footnoteStrong),
+      ],
+    );
+  }
+}
+
+class _ChooseScheduleButton extends StatelessWidget {
+  const _ChooseScheduleButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return PressScale(
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.ink,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: AppText.button.copyWith(fontSize: 16),
+          splashFactory: NoSplash.splashFactory,
+        ),
+        child: const Text(AppConstants.btnElegirHorario),
       ),
     );
   }

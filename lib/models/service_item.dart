@@ -1,54 +1,20 @@
+/// A repair of the workshop's active catalog; without [priceMxn] it is quoted at the workshop.
 class ServiceItem {
+  const ServiceItem({required this.id, required this.title, this.priceMxn});
+
   final String id;
   final String title;
-  final double? price;
-  final String? customPrice;
-  final String currency;
+  final int? priceMxn;
 
-  const ServiceItem({
-    required this.id,
-    required this.title,
-    this.price,
-    this.customPrice,
-    this.currency = 'MXN',
-  });
+  String get priceLabel => priceMxn == null ? 'A cotizar' : '\$$priceMxn';
 
-  String get priceDisplay {
-    if (customPrice != null) return customPrice!;
-    if (price != null) return '\$${price!.toStringAsFixed(0)}';
-    return '';
-  }
-
-  static List<ServiceItem> get mockServices => const [
-        ServiceItem(
-          id: '1',
-          title: 'Ajuste de cintura',
-          price: 180,
-        ),
-        ServiceItem(
-          id: '2',
-          title: 'Ajuste de vestido de fiesta',
-          price: 300,
-        ),
-        ServiceItem(
-          id: '3',
-          title: 'Vestido Personalizado',
-          customPrice: 'A cotizar',
-        ),
-        ServiceItem(
-          id: '4',
-          title: 'Cambio de cierre',
-          price: 130,
-        ),
-        ServiceItem(
-          id: '5',
-          title: 'Dobladillo de pantalón',
-          price: 100,
-        ),
-        ServiceItem(
-          id: '6',
-          title: 'Parche',
-          price: 40,
-        ),
-      ];
+  /// The panel's active catalog; deactivated services are not shown to clients.
+  static const catalog = [
+    ServiceItem(id: 'waist', title: 'Ajuste de cintura', priceMxn: 180),
+    ServiceItem(id: 'party-dress', title: 'Ajuste de vestido de fiesta', priceMxn: 300),
+    ServiceItem(id: 'custom-dress', title: 'Vestido Personalizado'),
+    ServiceItem(id: 'zipper', title: 'Cambio de cierre', priceMxn: 130),
+    ServiceItem(id: 'hem', title: 'Dobladillo de pantalón', priceMxn: 100),
+    ServiceItem(id: 'patch', title: 'Parche', priceMxn: 40),
+  ];
 }

@@ -1,0 +1,320 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
+import '../models/order.dart';
+import '../routes/app_routes.dart';
+import '../themes/app_colors.dart';
+import '../themes/app_theme.dart';
+import '../widgets/action_button.dart';
+import '../widgets/app_tab_bar.dart';
+import '../widgets/destructive_row.dart';
+import '../widgets/help_sheet.dart';
+import '../widgets/icon_row.dart';
+import '../widgets/inset_group.dart';
+import '../widgets/page_heading.dart';
+import '../widgets/section_header.dart';
+import '../widgets/status_note.dart';
+import '../widgets/tab_page.dart';
+
+/// Pedido: where one order or appointment stands and what the client can do about it.
+class OrderDetailScreen extends StatefulWidget {
+  const OrderDetailScreen({super.key, required this.order});
+
+  final Order order;
+
+  @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  bool _isOnTheWay = false;
+  bool _directionsOpened = false;
+
+  Order get _order => widget.order;
+
+  @override
+  Widget build(BuildContext context) {
+    return TabPage(
+      tab: AppTab.orders,
+      backLabel: 'Pedidos',
+      children: [
+        PageHeading('Pedido', subtitle: 'Ticket ${_order.ticket}'),
+        _StatusCard(
+          work: _order.work,
+          headline: _headline(),
+          progress: _order.isAppointment ? null : _order.status,
+          actions: _actions(),
+        ),
+        SectionHeader(_order.isAppointment ? 'Cotización' : 'Pago'),
+        _AmountRow(
+          label: _order.isAppointment ? 'Cotización preliminar' : 'Total, se paga en el taller',
+          amount: _order.formattedAmount,
+        ),
+        ..._cancellation(),
+        const SectionHeader('Más'),
+        InsetGroup(
+          children: [
+            IconRow(
+              icon: Icons.calendar_today_outlined,
+              title: 'Agendar otra cita',
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.services),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _headline() {
+    return _order.needsClient && _isOnTheWay ? 'Vas en camino' : _order.status.headline;
+  }
+
+  // Ready orders and appointments need the client at the workshop; anything else is a question for it.
+  List<Widget> _actions() {
+    final showsDirections = _order.needsClient || _order.isAppointment;
+    return [
+      if (_order.needsClient) _onTheWayAction(),
+      if (showsDirections)
+        _directionsAction()
+      else
+        ActionButton.tinted(label: 'Escribir al taller', onPressed: () => showHelpSheet(context)),
+    ];
+  }
+
+  Widget _onTheWayAction() {
+    if (_isOnTheWay) return const StatusNote('El taller ya sabe que vas en camino');
+    return ActionButton.primary(
+      label: 'Voy en camino',
+      icon: Icons.navigation_outlined,
+      onPressed: () => setState(() => _isOnTheWay = true),
+    );
+  }
+
+  Widget _directionsAction() {
+    if (_directionsOpened) return const StatusNote('Abrimos Mapas con la dirección');
+    return ActionButton.tinted(
+      label: 'Cómo llegar',
+      icon: Icons.location_on_outlined,
+      onPressed: () => setState(() => _directionsOpened = true),
+    );
+  }
+
+  List<Widget> _cancellation() {
+    if (!_order.isAppointment) return const [];
+    if (!_order.isCancellable) return const [_LateCancellationNote()];
+    return [
+      const SizedBox(height: 24),
+      DestructiveRow(label: 'Cancelar cita', onTap: _askToCancel),
+    ];
+  }
+
+  void _askToCancel() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      barrierColor: AppColors.sheetScrim,
+      builder: (popupContext) => _CancelAppointmentSheet(
+        freedSlotMessage: _freedSlotMessage(),
+        onCancel: _cancelAppointment,
+        onKeep: () => Navigator.of(popupContext).pop(),
+      ),
+    );
+  }
+
+  String _freedSlotMessage() {
+    final slot = _order.appointmentOn;
+    if (slot == null) return 'Tu horario queda libre para alguien más.';
+    return 'Tu horario del $slot queda libre para alguien más.';
+  }
+
+  void _cancelAppointment() {
+    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.work,
+    required this.headline,
+    required this.progress,
+    required this.actions,
+  });
+
+  final String work;
+  final String headline;
+  final OrderStatus? progress;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCanvas,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 16,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 4,
+            children: [
+              Text(work, style: AppText.subhead.copyWith(color: AppColors.onSurfaceVariant)),
+              Text(headline, style: AppText.statusHeadline),
+            ],
+          ),
+          if (progress case final current?) _ProgressSteps(current),
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 10, children: actions),
+        ],
+      ),
+    );
+  }
+}
+
+/// The bar fills up to the current step; the current label is the bold one.
+class _ProgressSteps extends StatelessWidget {
+  const _ProgressSteps(this.current);
+
+  final OrderStatus current;
+
+  static const _steps = [
+    (status: OrderStatus.received, label: 'Recibido'),
+    (status: OrderStatus.inProgress, label: 'En proceso'),
+    (status: OrderStatus.ready, label: 'Listo'),
+    (status: OrderStatus.delivered, label: 'Entregado'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final currentIndex = _steps.indexWhere((step) => step.status == current);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 4,
+      children: [
+        for (final (index, step) in _steps.indexed)
+          Expanded(
+            child: _Step(
+              label: step.label,
+              isReached: index <= currentIndex,
+              isCurrent: index == currentIndex,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Step extends StatelessWidget {
+  const _Step({required this.label, required this.isReached, required this.isCurrent});
+
+  final String label;
+  final bool isReached;
+  final bool isCurrent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 6,
+      children: [
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: isReached ? AppColors.ink : AppColors.pendingStep,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        Text(
+          label,
+          style: AppText.caption.copyWith(
+            fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+            color: isCurrent ? AppColors.ink : AppColors.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AmountRow extends StatelessWidget {
+  const _AmountRow({required this.label, required this.amount});
+
+  final String label;
+  final String amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return InsetGroup(
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 52),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(label, style: AppText.body.copyWith(fontWeight: FontWeight.w500)),
+                ),
+                Text(amount, style: AppText.body.copyWith(fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LateCancellationNote extends StatelessWidget {
+  const _LateCancellationNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Text(
+        'Faltan menos de 24 horas para tu cita: para cancelarla, escríbele al taller.',
+        style: AppText.footnote,
+      ),
+    );
+  }
+}
+
+class _CancelAppointmentSheet extends StatelessWidget {
+  const _CancelAppointmentSheet({
+    required this.freedSlotMessage,
+    required this.onCancel,
+    required this.onKeep,
+  });
+
+  final String freedSlotMessage;
+  final VoidCallback onCancel;
+  final VoidCallback onKeep;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoActionSheet(
+      title: Text('¿Cancelar tu cita?', style: AppText.subhead.copyWith(fontWeight: FontWeight.w700)),
+      message: Text(freedSlotMessage, style: AppText.footnote),
+      actions: [
+        CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          onPressed: onCancel,
+          child: Text(
+            'Sí, cancelar la cita',
+            style: AppText.actionSheetButton.copyWith(color: AppColors.errorRed),
+          ),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: onKeep,
+        child: Text(
+          'No, conservarla',
+          style: AppText.actionSheetButton.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}

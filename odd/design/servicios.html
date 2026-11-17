@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<body>
+<x-dc>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #0F172A; color: #0F172A; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0; overflow: hidden; background: #F2F4F7; border-radius: {{ backRadius }}; transform: {{ backTransform }}; transform-origin: 50% 0; transition: transform {{ motionDuration }} cubic-bezier(0.32, 0.72, 0, 1), border-radius {{ motionDuration }} cubic-bezier(0.32, 0.72, 0, 1)">
+    <main style="height: 100%; overflow-y: auto; box-sizing: border-box; padding: 8px 16px 190px; display: flex; flex-direction: column">
+      <div style="flex: none; height: 44px; display: flex; align-items: center; justify-content: flex-end">
+        <button type="button" aria-label="Ayuda" sc-camel-on-click="{{ openHelp }}" style="width: 44px; height: 44px; margin-right: -6px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; color: #0F172A; ">
+          <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.07); border-radius: 50%">
+            <svg M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01/>
+          </span>
+        </button>
+      </div>
+      <h1 style="margin: 0 4px; font-size: 34px; line-height: 40px; font-weight: 800; letter-spacing: -0.02em">Servicios</h1>
+      <p style="margin: 2px 4px 18px; font-size: 17px; line-height: 24px; font-weight: 500; color: #45464D">Marca lo que necesitas y elige tu horario.</p>
+      <ul style="flex: none; list-style: none; margin: 0; padding: 0; overflow: hidden; background: #FFFFFF; border-radius: 16px">
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="6">
+          <li style="border-top: {{ row.divider }}">
+            <button type="button" aria-pressed="{{ row.pressed }}" sc-camel-on-click="{{ row.toggle }}" style="width: 100%; min-height: 60px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 16px; background: #FFFFFF; border: 0; color: #0F172A; text-align: left; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+              <span style="flex: 1; min-width: 0; font-size: 17px; line-height: 22px; font-weight: 600">{{ row.name }}</span>
+              <span style="flex: none; font-size: {{ row.priceSize }}; line-height: 22px; font-weight: {{ row.priceWeight }}; color: {{ row.priceColor }}; text-align: right">{{ row.priceLabel }}</span>
+              <span style="flex: none; width: 24px; height: 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: {{ row.checkBackground }}; border: 2px solid {{ row.checkBorder }}; border-radius: 50%; color: #FFFFFF; transition: background-color 160ms ease, border-color 160ms ease">
+                <sc-if value="{{ row.isSelected }}">
+                  <svg M20 6 9 17l-5-5/>
+                </sc-if>
+              </span>
+            </button>
+          </li>
+        </sc-for>
+      </ul>
+      <p style="margin: 8px 16px 0; font-size: 13px; line-height: 18px; color: #45464D">El precio final se confirma al revisar tu prenda.</p>
+      <h2 style="margin: 24px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">Extras</h2>
+      <div style="flex: none; overflow: hidden; background: #FFFFFF; border-radius: 16px">
+        <button type="button" role="switch" aria-checked="{{ urgentChecked }}" sc-camel-on-click="{{ toggleUrgent }}" style="width: 100%; min-height: 60px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 16px; background: #FFFFFF; border: 0; color: #0F172A; text-align: left; transition: background-color 160ms ease" style-active="background-color: #E9ECF1">
+          <span style="flex: 1; min-width: 0; font-size: 17px; line-height: 22px; font-weight: 600">Prenda urgente</span>
+          <span style="flex: none; font-size: {{ urgentPriceSize }}; line-height: 22px; font-weight: {{ urgentPriceWeight }}; color: {{ urgentPriceColor }}">{{ urgentPriceLabel }}</span>
+          <span style="flex: none; position: relative; width: 51px; height: 31px; background: {{ switchTrack }}; border-radius: 999px; transition: background-color 200ms ease">
+            <span style="position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; background: #FFFFFF; border-radius: 50%; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2); transform: {{ switchKnob }}; transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1)"></span>
+          </span>
+        </button>
+      </div>
+      <p style="margin: 8px 16px 0; font-size: 13px; line-height: 18px; color: #45464D">Te la entregamos antes. El cargo se suma a tus arreglos.</p>
+    </main>
+    <sc-if value="{{ hasSelection }}">
+      <div style="position: absolute; left: 12px; right: 12px; bottom: 95px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; background: {{ materialBackground }}; backdrop-filter: {{ materialBlur }}; -webkit-backdrop-filter: {{ materialBlur }}; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 20px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 700">{{ selectionLabel }}</span>
+          <span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">{{ quote }}</span>
+        </span>
+        <button type="button" sc-camel-on-click="{{ openSheet }}" style="flex: none; min-height: 48px; padding: 0 18px; background: #0F172A; color: #FFFFFF; border: 0; border-radius: 14px; font-size: 16px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Elegir horario</button>
+      </div>
+    </sc-if>
+    <nav aria-label="Principal" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; box-sizing: border-box; padding: 0 12px 34px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; background: {{ materialBackground }}; backdrop-filter: {{ materialBlur }}; -webkit-backdrop-filter: {{ materialBlur }}; border-top: 1px solid rgba(15, 23, 42, 0.08)">
+      <a href="ApplePedidos.dc.html" style="display: flex; justify-content: center; color: #45464D; text-decoration: none">
+        <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600">
+          <svg M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V M8 8h8M8 12h8M8 16h/>
+          <span>Pedidos</span>
+        </span>
+      </a>
+      <a href="AppleServicios.dc.html" aria-current="page" style="display: flex; justify-content: center; color: #0F172A; text-decoration: none">
+        <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; background: rgba(15, 23, 42, 0.09); border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 800">
+          <svg M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0  M7.5 7.5h.01/>
+          <span>Servicios</span>
+        </span>
+      </a>
+      <a href="ApplePerfil.dc.html" style="display: flex; justify-content: center; color: #45464D; text-decoration: none">
+        <span style="min-width: 96px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 16px; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600">
+          <svg M4 21a8 8 0 0 1 16 0/>
+          <span>Perfil</span>
+        </span>
+      </a>
+    </nav>
+  </div>
+  <sc-if value="{{ isSheetMounted }}">
+    <button type="button" aria-label="Cerrar" sc-camel-on-click="{{ closeSheet }}" style="position: absolute; inset: 0; padding: 0; border: 0; background: rgba(15, 23, 42, 0.3); opacity: {{ scrimOpacity }}; transition: opacity {{ motionDuration }} ease-out; "></button>
+    <div role="dialog" aria-modal="true" aria-labelledby="hoja-titulo" style="position: absolute; left: 0; right: 0; top: 54px; bottom: 0; display: flex; flex-direction: column; background: #F2F4F7; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.18); opacity: {{ sheetOpacity }}; transform: {{ sheetTransform }}; transition: transform {{ motionDuration }} cubic-bezier(0.32, 0.72, 0, 1), opacity {{ motionDuration }} ease-out">
+      <div style="flex: none; display: flex; flex-direction: column; align-items: center; padding-top: 8px">
+        <span style="width: 36px; height: 5px; border-radius: 3px; background: #C3C8D0"></span>
+        <div style="width: 100%; height: 48px; box-sizing: border-box; display: grid; grid-template-columns: 96px 1fr 96px; align-items: center; padding: 0 8px">
+          <span style="justify-self: start">
+            <sc-if value="{{ choosing }}">
+              <button type="button" sc-camel-on-click="{{ closeSheet }}" style="min-height: 44px; padding: 0 8px; background: none; border: 0; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 500; ">Cancelar</button>
+            </sc-if>
+          </span>
+          <h2 id="hoja-titulo" style="margin: 0; text-align: center; font-size: 17px; line-height: 22px; font-weight: 800">Agendar cita</h2>
+          <span style="justify-self: end">
+            <sc-if value="{{ confirmed }}">
+              <button type="button" sc-camel-on-click="{{ closeSheet }}" style="min-height: 44px; padding: 0 8px; background: none; border: 0; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 800; ">Listo</button>
+            </sc-if>
+          </span>
+        </div>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 4px 16px 20px">
+        <sc-if value="{{ choosing }}">
+          <div style="display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: #FFFFFF; border-radius: 16px">
+            <span style="font-size: 17px; line-height: 22px; font-weight: 700">{{ selectedNames }}</span>
+            <span style="font-size: 13px; line-height: 18px; color: #45464D">Cotización preliminar: {{ quote }}</span>
+          </div>
+          <h3 id="dia-etiqueta" style="margin: 20px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">Día</h3>
+          <div role="group" aria-labelledby="dia-etiqueta" style="padding: 14px 8px 10px; background: #FFFFFF; border-radius: 16px">
+            <p style="margin: 0 8px 10px; font-size: 17px; line-height: 22px; font-weight: 800">{{ monthName }}</p>
+            <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-bottom: 4px">
+              <sc-for list="{{ weekdayInitials }}" as="initial" hint-placeholder-count="7">
+                <span style="text-align: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #45464D">{{ initial }}</span>
+              </sc-for>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px">
+              <sc-for list="{{ calendarDays }}" as="day" hint-placeholder-count="30">
+                <button type="button" aria-label="{{ day.ariaLabel }}" aria-pressed="{{ day.pressed }}" aria-disabled="{{ day.disabled }}" sc-camel-on-click="{{ day.pick }}" style="grid-column-start: {{ day.column }}; justify-self: center; width: 40px; height: 40px; padding: 0; background: {{ day.background }}; color: {{ day.color }}; border: 0; border-radius: 50%; box-shadow: {{ day.ring }}; font-size: 17px; line-height: 40px; font-weight: {{ day.weight }}; font-variant-numeric: tabular-nums; cursor: {{ day.cursor }}; transition: background-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: {{ day.pressScale }}">{{ day.number }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <h3 id="hora-etiqueta" style="margin: 20px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">Hora</h3>
+          <div role="group" aria-labelledby="hora-etiqueta" style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #FFFFFF; border-radius: 16px; overflow: hidden">
+            <span style="position: absolute; left: 12px; right: 12px; top: 80px; height: 40px; background: rgba(15, 23, 42, 0.06); border-radius: 10px; pointer-events: none"></span>
+            <div role="group" aria-label="Hora" sc-camel-on-scroll="{{ onHourScroll }}" ref="{{ setHourWheel }}" style="position: relative; width: 88px; height: 200px; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%)">
+              <div style="height: 80px"></div>
+              <sc-for list="{{ hourItems }}" as="item" hint-placeholder-count="8">
+                <button type="button" aria-pressed="{{ item.pressed }}" aria-label="{{ item.ariaLabel }}" sc-camel-on-click="{{ item.pick }}" style="display: block; width: 100%; height: 40px; padding: 0; background: none; border: 0; scroll-snap-align: center; color: {{ item.color }}; font-size: 24px; line-height: 40px; font-weight: {{ item.weight }}; font-variant-numeric: tabular-nums; text-align: center; transition: color 120ms ease">{{ item.label }}</button>
+              </sc-for>
+              <div style="height: 80px"></div>
+            </div>
+            <span style="position: relative; font-size: 24px; line-height: 40px; font-weight: 800">:</span>
+            <div role="group" aria-label="Minutos" sc-camel-on-scroll="{{ onMinuteScroll }}" ref="{{ setMinuteWheel }}" style="position: relative; width: 88px; height: 200px; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%)">
+              <div style="height: 80px"></div>
+              <sc-for list="{{ minuteItems }}" as="item" hint-placeholder-count="2">
+                <button type="button" aria-pressed="{{ item.pressed }}" aria-label="{{ item.ariaLabel }}" sc-camel-on-click="{{ item.pick }}" style="display: block; width: 100%; height: 40px; padding: 0; background: none; border: 0; scroll-snap-align: center; color: {{ item.color }}; font-size: 24px; line-height: 40px; font-weight: {{ item.weight }}; font-variant-numeric: tabular-nums; text-align: center; transition: color 120ms ease">{{ item.label }}</button>
+              </sc-for>
+              <div style="height: 80px"></div>
+            </div>
+          </div>
+          <p style="margin: 8px 16px 0; font-size: 13px; line-height: 18px; color: #45464D">Gira para elegir. Las horas en gris no están disponibles.</p>
+          <h3 style="margin: 20px 16px 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: #45464D">Tus datos</h3>
+          <div role="group" aria-label="Tus datos" style="overflow: hidden; background: #FFFFFF; border-radius: 16px">
+            <label style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px">
+              <span style="flex: none; width: 76px; font-size: 17px; line-height: 22px; font-weight: 600; color: {{ nameLabelColor }}">Nombre</span>
+              <input type="text" placeholder="Tu nombre" value="{{ name }}" sc-camel-on-change="{{ onName }}" aria-invalid="{{ nameMissing }}" style="flex: 1; min-width: 0; height: 52px; padding: 0; border: 0; outline: none; background: transparent; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600">
+            </label>
+            <span style="display: block; height: 1px; margin-left: 16px; background: rgba(15, 23, 42, 0.1)"></span>
+            <label style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px">
+              <span style="flex: none; width: 76px; font-size: 17px; line-height: 22px; font-weight: 600; color: {{ phoneLabelColor }}">Celular</span>
+              <input type="tel" placeholder="998 123 4567" value="{{ phone }}" sc-camel-on-change="{{ onPhone }}" aria-invalid="{{ phoneInvalid }}" style="flex: 1; min-width: 0; height: 52px; padding: 0; border: 0; outline: none; background: transparent; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600">
+            </label>
+            <span style="display: block; height: 1px; margin-left: 16px; background: rgba(15, 23, 42, 0.1)"></span>
+            <label style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px">
+              <span style="flex: none; width: 76px; font-size: 17px; line-height: 22px; font-weight: 600; color: {{ nipLabelColor }}">NIP</span>
+              <input type="password" maxlength="4" placeholder="4 dígitos" value="{{ nip }}" sc-camel-on-change="{{ onNip }}" aria-invalid="{{ nipInvalid }}" style="flex: 1; min-width: 0; height: 52px; padding: 0; border: 0; outline: none; background: transparent; color: #0F172A; font-size: 17px; line-height: 22px; font-weight: 600">
+            </label>
+          </div>
+          <p style="margin: 8px 16px 0; font-size: 13px; line-height: 18px; color: #45464D">Con este celular y tu NIP ves tus pedidos. El NIP no es para pagar. Te confirmamos por WhatsApp.</p>
+        </sc-if>
+        <sc-if value="{{ confirmed }}">
+          <div role="status" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 8px 8px; text-align: center">
+            <span style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 50%">
+              <svg M20 6 9 17l-5-5/>
+            </span>
+            <h3 style="margin: 10px 0 0; font-size: 28px; line-height: 34px; font-weight: 800; letter-spacing: -0.015em">Cita agendada</h3>
+            <p style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 500; color: #45464D">{{ summary }} · {{ selectedNames }}</p>
+          </div>
+          <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 20px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06)">
+            <span style="font-size: 13px; line-height: 18px; font-weight: 700">Tu ticket</span>
+            <span style="font-size: 48px; line-height: 56px; font-weight: 800; letter-spacing: 0.06em">0937</span>
+          </div>
+          <p style="margin: 10px 16px 0; font-size: 13px; line-height: 18px; text-align: center; color: #45464D">Tu cita ya aparece en Pedidos. Muestra este ticket en el taller.</p>
+        </sc-if>
+      </div>
+      <div style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 34px; background: #F2F4F7; border-top: 1px solid rgba(15, 23, 42, 0.08)">
+        <sc-if value="{{ choosing }}">
+          <sc-if value="{{ hasFormError }}">
+            <p role="alert" style="margin: 0; text-align: center; font-size: 13px; line-height: 18px; font-weight: 700; color: #B91C1C">{{ formError }}</p>
+          </sc-if>
+          <button type="button" sc-camel-on-click="{{ onConfirm }}" style="width: 100%; min-height: 52px; background: #0F172A; color: #FFFFFF; border: 0; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Confirmar · {{ summary }}</button>
+        </sc-if>
+        <sc-if value="{{ confirmed }}">
+          <a href="ApplePedidoCita.dc.html" style="min-height: 52px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 700; text-decoration: none; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1)" style-active="transform: scale(0.97)">Ver mi cita</a>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ helpOpen }}">
+    <div style="position: absolute; inset: 0; z-index: 5">
+      <dc-import name="AppleAyuda" on-cerrar="{{ closeHelp }}"></dc-import>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;hoja&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cerrada&quot;,&quot;abierta&quot;,&quot;confirmada&quot;],&quot;default&quot;:&quot;cerrada&quot;},&quot;cargoUrgenteMxn&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;step&quot;:10,&quot;unit&quot;:&quot;MXN&quot;},&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  state = {
+    stage: null,
+    sheetShown: false,
+    closing: false,
+    selectedIds: null,
+    day: 5,
+    time: '11:00',
+    name: '',
+    phone: '',
+    nip: '',
+    isUrgent: false,
+    showErrors: false,
+    helpOpen: false,
+  };
+  // The panel's active catalog; Bordado is deactivated, so clients do not see it.
+  services = [
+    { id: 'waist', name: 'Ajuste de cintura', priceMxn: 180 },
+    { id: 'party-dress', name: 'Ajuste de vestido de fiesta', priceMxn: 300 },
+    { id: 'wedding-dress', name: 'Vestido Personalizado', priceMxn: null },
+    { id: 'zipper', name: 'Cambio de cierre', priceMxn: 130 },
+    { id: 'hem', name: 'Dobladillo de pantalón', priceMxn: 100 },
+    { id: 'patch', name: 'Parche', priceMxn: 40 },
+  ];
+  // November 2026: the 1st is a Sunday and today is Wednesday the 4th. Weeks start on Monday.
+  monthName = 'Noviembre 2026';
+  monthLongName = 'noviembre';
+  daysInMonth = 30;
+  firstWeekday = 7;
+  today = 4;
+  weekdayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  weekdayShortNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  weekdayLongNames = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  // The panel's demo agenda: Sunday is closed in Mi horario and Friday the 6th was blocked.
+  closedWeekday = 7;
+  blockedDays = [6];
+  businessSlots = [
+    '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+  ];
+  todaySlots = ['15:30', '16:00', '16:30', '17:00', '17:30'];
+  bookedSlots = { 5: ['12:00', '12:30', '14:30'] };
+  nipLength = 4;
+  // The alarm-style wheels use the panel's 30-minute slots.
+  wheelMinutes = ['00', '30'];
+  wheelRowHeight = 40;
+  renderVals() {
+    const stage = this.currentStage();
+    const selected = this.selectedServices();
+    const formError = this.state.showErrors ? this.formError() : '';
+    const nameMissing = formError !== '' && this.state.name.trim() === '';
+    const phoneInvalid = formError !== '' && !nameMissing && !this.isPhoneValid();
+    const nipInvalid = formError !== '' && !nameMissing && !phoneInvalid;
+    return {
+      rows: this.services.map((service, index) => this.toRow(service, index, selected)),
+      ...this.urgentRow(),
+      hasSelection: selected.length > 0,
+      selectionLabel: this.selectionLabel(selected.length),
+      quote: this.quoteFor(selected),
+      isSheetMounted: stage !== 'cerrada',
+      choosing: stage === 'abierta',
+      confirmed: stage === 'confirmada',
+      selectedNames: this.selectedNames(selected),
+      monthName: this.monthName,
+      weekdayInitials: this.weekdayInitials,
+      calendarDays: Array.from({ length: this.daysInMonth }, (_, offset) => this.toCalendarDay(offset + 1)),
+      hourItems: this.wheelHoursFor(this.state.day).map((hour) => this.toWheelItem(hour, 'hour')),
+      minuteItems: this.wheelMinutes.map((minute) => this.toWheelItem(minute, 'minute')),
+      summary: this.shortDayLabel(this.state.day) + ', ' + this.state.time,
+      name: this.state.name,
+      phone: this.state.phone,
+      nameMissing,
+      phoneInvalid,
+      nipInvalid,
+      nip: this.state.nip,
+      nameLabelColor: nameMissing ? '#B91C1C' : '#0F172A',
+      phoneLabelColor: phoneInvalid ? '#B91C1C' : '#0F172A',
+      nipLabelColor: nipInvalid ? '#B91C1C' : '#0F172A',
+      hasFormError: formError !== '',
+      formError,
+      helpOpen: this.state.helpOpen,
+      ...this.sheetMotion(),
+      ...this.material(),
+      toggleUrgent: this.toggleUrgent,
+      onHourScroll: this.onHourScroll,
+      onMinuteScroll: this.onMinuteScroll,
+      setHourWheel: this.setHourWheel,
+      setMinuteWheel: this.setMinuteWheel,
+      openSheet: this.openSheet,
+      closeSheet: this.closeSheet,
+      onName: this.onName,
+      onPhone: this.onPhone,
+      onNip: this.onNip,
+      onConfirm: this.onConfirm,
+      openHelp: this.openHelp,
+      closeHelp: this.closeHelp,
+    };
+  }
+  currentStage() {
+    return this.state.stage ?? this.props.hoja ?? 'cerrada';
+  }
+  selectedServices() {
+    const startsInSheet = (this.props.hoja ?? 'cerrada') !== 'cerrada';
+    const ids = this.state.selectedIds ?? (startsInSheet ? ['waist'] : []);
+    return this.services.filter((service) => ids.includes(service.id));
+  }
+  // "A cotizar" sits at the same size as the prices, in the secondary color.
+  toRow(service, index, selected) {
+    const isSelected = selected.includes(service);
+    const hasPrice = service.priceMxn !== null;
+    return {
+      name: service.name,
+      priceLabel: hasPrice ? '$' + service.priceMxn : 'A cotizar',
+      priceSize: hasPrice ? '17px' : '15px',
+      priceWeight: hasPrice ? 700 : 600,
+      priceColor: hasPrice ? '#0F172A' : '#45464D',
+      divider: index === 0 ? '0' : '1px solid rgba(15, 23, 42, 0.1)',
+      isSelected,
+      pressed: isSelected ? 'true' : 'false',
+      checkBackground: isSelected ? '#0F172A' : 'transparent',
+      checkBorder: isSelected ? '#0F172A' : 'rgba(15, 23, 42, 0.3)',
+      toggle: () => this.toggleService(service.id, selected),
+    };
+  }
+  toggleService(id, selected) {
+    const ids = selected.map((service) => service.id);
+    const nextIds = ids.includes(id) ? ids.filter((current) => current !== id) : [...ids, id];
+    this.setState({ selectedIds: nextIds });
+  }
+  // The surcharge amount is not defined yet: until it is set in Tweaks, the row says "Cargo extra".
+  urgentRow() {
+    const amount = this.urgentAmount();
+    const isOn = this.state.isUrgent;
+    return {
+      urgentChecked: isOn ? 'true' : 'false',
+      urgentPriceLabel: amount > 0 ? '+$' + amount : 'Cargo extra',
+      urgentPriceSize: amount > 0 ? '17px' : '15px',
+      urgentPriceWeight: amount > 0 ? 700 : 600,
+      urgentPriceColor: amount > 0 ? '#0F172A' : '#45464D',
+      switchTrack: isOn ? '#0F172A' : 'rgba(15, 23, 42, 0.16)',
+      switchKnob: isOn ? 'translateX(20px)' : 'translateX(0)',
+    };
+  }
+  selectionLabel(count) {
+    const repairs = count === 1 ? '1 arreglo' : count + ' arreglos';
+    return this.state.isUrgent ? repairs + ' · urgente' : repairs;
+  }
+  // Services without a price stay out of the preliminary total, as the panel's spec asks.
+  quoteFor(selected) {
+    const priced = selected.filter((service) => service.priceMxn !== null);
+    const surcharge = this.state.isUrgent ? this.urgentAmount() : 0;
+    const total = priced.reduce((sum, service) => sum + service.priceMxn, 0) + surcharge;
+    const parts = [];
+    if (total > 0) parts.push('$' + total + ' MXN');
+    if (priced.length < selected.length) parts.push(parts.length > 0 ? 'a cotizar' : 'A cotizar en el taller');
+    if (this.state.isUrgent && surcharge === 0) parts.push(parts.length > 0 ? 'cargo por urgencia' : 'Cargo por urgencia');
+    return parts.join(' + ');
+  }
+  urgentAmount() {
+    return Math.max(0, this.props.cargoUrgenteMxn ?? 0);
+  }
+  selectedNames(selected) {
+    const names = selected.map((service) => service.name).join(', ');
+    return this.state.isUrgent ? names + ' · Urgente' : names;
+  }
+  // Free slots as the API would send them: business hours minus past days, closed and blocked days, and bookings.
+  freeSlotsFor(day) {
+    const isUnavailable = day < this.today || this.weekdayOf(day) === this.closedWeekday || this.blockedDays.includes(day);
+    if (isUnavailable) return [];
+    if (day === this.today) return this.todaySlots;
+    const booked = this.bookedSlots[day] ?? [];
+    return this.businessSlots.filter((slot) => !booked.includes(slot));
+  }
+  // 1 is Monday and 7 is Sunday.
+  weekdayOf(day) {
+    return ((this.firstWeekday - 1 + day - 1) % 7) + 1;
+  }
+  shortDayLabel(day) {
+    return day === this.today ? 'Hoy' : this.weekdayShortNames[this.weekdayOf(day) - 1] + ' ' + day;
+  }
+  // Days without a free slot keep their place in gray, like the unavailable dates of an iOS calendar.
+  toCalendarDay(day) {
+    const isSelected = day === this.state.day;
+    const isAvailable = this.freeSlotsFor(day).length > 0;
+    return {
+      number: day,
+      column: day === 1 ? this.firstWeekday : 'auto',
+      ariaLabel: this.longDayLabel(day) + (isAvailable ? '' : ', no disponible'),
+      pressed: isSelected ? 'true' : 'false',
+      disabled: isAvailable ? 'false' : 'true',
+      background: isSelected ? '#0F172A' : 'transparent',
+      color: this.calendarDayColor(isSelected, isAvailable),
+      ring: day === this.today && !isSelected ? 'inset 0 0 0 1.5px #0F172A' : 'none',
+      weight: isSelected || day === this.today ? 800 : 600,
+      cursor: isAvailable ? 'pointer' : 'default',
+      pressScale: isAvailable ? 'scale(0.92)' : 'none',
+      pick: () => {
+        if (isAvailable) this.pickDay(day);
+      },
+    };
+  }
+  longDayLabel(day) {
+    const label = this.weekdayLongNames[this.weekdayOf(day) - 1] + ' ' + day + ' de ' + this.monthLongName;
+    return day === this.today ? 'Hoy, ' + label : label;
+  }
+  calendarDayColor(isSelected, isAvailable) {
+    if (isSelected) return '#FFFFFF';
+    return isAvailable ? '#0F172A' : '#B8BEC8';
+  }
+  // The hour wheel runs from the first to the last free hour of the day; gaps in between stay, in gray.
+  wheelHoursFor(day) {
+    const slots = this.freeSlotsFor(day);
+    const first = Number(slots[0].split(':')[0]);
+    const last = Number(slots[slots.length - 1].split(':')[0]);
+    return Array.from({ length: last - first + 1 }, (_, offset) => String(first + offset).padStart(2, '0'));
+  }
+  // Unavailable values stay visible in light gray, like the out-of-range times of an iOS picker.
+  // The client does not need the reason: booked, past and blocked look the same.
+  toWheelItem(value, unit) {
+    const [hour, minute] = this.state.time.split(':');
+    const isSelected = unit === 'hour' ? value === hour : value === minute;
+    const isFree = unit === 'hour' ? this.hourHasFreeSlot(value) : this.isFree(hour + ':' + value);
+    return {
+      label: value,
+      ariaLabel: value + (unit === 'hour' ? ' horas' : ' minutos') + (isFree ? '' : ', no disponible'),
+      pressed: isSelected ? 'true' : 'false',
+      color: this.wheelColor(isSelected, isFree),
+      weight: isSelected ? 800 : 600,
+      pick: () => this.scrollWheel(unit, this.wheelValues(unit).indexOf(value), true),
+    };
+  }
+  hourHasFreeSlot(hour) {
+    return this.wheelMinutes.some((minute) => this.isFree(hour + ':' + minute));
+  }
+  isFree(time) {
+    return this.freeSlotsFor(this.state.day).includes(time);
+  }
+  wheelColor(isSelected, isFree) {
+    if (isSelected) return '#0F172A';
+    return isFree ? '#45464D' : '#B8BEC8';
+  }
+  wheelValues(unit) {
+    return unit === 'hour' ? this.wheelHoursFor(this.state.day) : this.wheelMinutes;
+  }
+  // The wheel scrolls natively (1:1 with the finger, with momentum and snap); the time follows it.
+  followWheel(unit, element) {
+    const values = this.wheelValues(unit);
+    const index = Math.min(values.length - 1, Math.max(0, Math.round(element.scrollTop / this.wheelRowHeight)));
+    const [hour, minute] = this.state.time.split(':');
+    const time = unit === 'hour' ? values[index] + ':' + minute : hour + ':' + values[index];
+    if (time !== this.state.time) this.setState({ time });
+    clearTimeout(this.settleTimer);
+    this.settleTimer = setTimeout(() => this.settleOnFreeSlot(), 160);
+  }
+  // Like an iOS picker with a minimum date: an unavailable time rolls to the nearest free one.
+  settleOnFreeSlot() {
+    const slots = this.freeSlotsFor(this.state.day);
+    if (slots.includes(this.state.time)) return;
+    const nearest = this.nearestSlot(slots, this.state.time);
+    this.setState({ time: nearest });
+    this.scrollWheelsTo(nearest, true);
+  }
+  nearestSlot(slots, time) {
+    const target = this.toMinutes(time);
+    const distance = (slot) => Math.abs(this.toMinutes(slot) - target);
+    return slots.reduce((best, slot) => (distance(slot) < distance(best) ? slot : best));
+  }
+  toMinutes(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+  scrollWheelsTo(time, isAnimated) {
+    const [hour, minute] = time.split(':');
+    this.scrollWheel('hour', this.wheelHoursFor(this.state.day).indexOf(hour), isAnimated);
+    this.scrollWheel('minute', this.wheelMinutes.indexOf(minute), isAnimated);
+  }
+  scrollWheel(unit, index, isAnimated) {
+    const element = unit === 'hour' ? this.hourWheel : this.minuteWheel;
+    if (!element || index < 0) return;
+    const behavior = isAnimated && !this.prefersReducedMotion() ? 'smooth' : 'auto';
+    element.scrollTo({ top: index * this.wheelRowHeight, behavior });
+  }
+  // The hour wheel changes length with the day, so it scrolls once the new hours are on screen.
+  pickDay(day) {
+    const slots = this.freeSlotsFor(day);
+    const time = slots.includes(this.state.time) ? this.state.time : this.nearestSlot(slots, this.state.time);
+    this.setState({ day, time });
+    cancelAnimationFrame(this.wheelFrame);
+    this.wheelFrame = requestAnimationFrame(() => this.scrollWheelsTo(time, true));
+  }
+  formError() {
+    if (this.state.name.trim() === '') return 'Escribe tu nombre.';
+    if (!this.isPhoneValid()) return 'Escribe los 10 dígitos de tu celular.';
+    if (this.state.nip.length !== this.nipLength) return 'Elige un NIP de 4 dígitos.';
+    return '';
+  }
+  isPhoneValid() {
+    return this.state.phone.replace(/\D/g, '').length === 10;
+  }
+  // The page behind recedes while the sheet is up; exits run faster than entrances.
+  sheetMotion() {
+    const isSheetIn = this.state.sheetShown && !this.state.closing;
+    const reduceMotion = this.prefersReducedMotion();
+    return {
+      motionDuration: this.state.closing ? '240ms' : '420ms',
+      scrimOpacity: isSheetIn ? 1 : 0,
+      sheetTransform: isSheetIn || reduceMotion ? 'translateY(0)' : 'translateY(100%)',
+      sheetOpacity: isSheetIn || !reduceMotion ? 1 : 0,
+      backTransform: isSheetIn && !reduceMotion ? 'translateY(10px) scale(0.94)' : 'none',
+      backRadius: isSheetIn ? '16px' : '0px',
+    };
+  }
+  // Translucent bars, solid when the person asks for less transparency.
+  material() {
+    const isSolid = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-transparency: reduce)').matches;
+    return {
+      materialBackground: isSolid ? '#FFFFFF' : 'rgba(248, 250, 252, 0.78)',
+      materialBlur: isSolid ? 'none' : 'blur(20px) saturate(180%)',
+    };
+  }
+  prefersReducedMotion() {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  componentDidMount() {
+    if (this.currentStage() !== 'cerrada') this.revealSheet();
+  }
+  // Mount the sheet off-screen, then move it in on the next frames so the transition has a start.
+  revealSheet() {
+    this.enterFrame = requestAnimationFrame(() => {
+      this.enterFrame = requestAnimationFrame(() => this.setState({ sheetShown: true }));
+    });
+  }
+  openSheet = () => {
+    const ids = this.selectedServices().map((service) => service.id);
+    this.setState({ stage: 'abierta', sheetShown: false, closing: false, selectedIds: ids });
+    this.revealSheet();
+  };
+  closeSheet = () => {
+    if (this.state.closing) return;
+    this.setState({ closing: true });
+    this.closeTimer = setTimeout(() => {
+      this.setState({ stage: 'cerrada', sheetShown: false, closing: false, showErrors: false });
+    }, 240);
+  };
+  toggleUrgent = () => this.setState({ isUrgent: !this.state.isUrgent });
+  onHourScroll = (event) => this.followWheel('hour', event.currentTarget);
+  onMinuteScroll = (event) => this.followWheel('minute', event.currentTarget);
+  // Each wheel starts on the chosen time as soon as it mounts.
+  setHourWheel = (element) => {
+    this.hourWheel = element;
+    this.scrollWheel('hour', this.wheelHoursFor(this.state.day).indexOf(this.state.time.split(':')[0]), false);
+  };
+  setMinuteWheel = (element) => {
+    this.minuteWheel = element;
+    this.scrollWheel('minute', this.wheelMinutes.indexOf(this.state.time.split(':')[1]), false);
+  };
+  onName = (event) => this.setState({ name: event.target.value, showErrors: false });
+  onPhone = (event) => {
+    const digits = event.target.value.replace(/\D/g, '').slice(0, 10);
+    const phone = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6)].filter(Boolean).join(' ');
+    this.setState({ phone, showErrors: false });
+  };
+  onNip = (event) => this.setState({ nip: event.target.value.replace(/\D/g, '').slice(0, 4), showErrors: false });
+  onConfirm = () => {
+    if (this.formError() !== '') {
+      this.setState({ showErrors: true });
+      return;
+    }
+    this.setState({ stage: 'confirmada', showErrors: false });
+  };
+  openHelp = () => this.setState({ helpOpen: true });
+  closeHelp = () => this.setState({ helpOpen: false });
+  componentWillUnmount() {
+    cancelAnimationFrame(this.enterFrame);
+    cancelAnimationFrame(this.wheelFrame);
+    clearTimeout(this.closeTimer);
+    clearTimeout(this.settleTimer);
+  }
+}
+</script>
+</body></html>

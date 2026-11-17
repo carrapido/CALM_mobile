@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../models/demo_client_access.dart';
+import '../models/field_problem.dart';
+import '../models/login_form.dart';
+import '../models/profile_form.dart';
 import '../models/user_profile.dart';
 import '../routes/app_routes.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
-import '../utils/app_constants.dart';
 import '../utils/telefono_formatter.dart';
-import '../widgets/boton_taller.dart';
-import '../widgets/bottom_nav_bar_widget.dart';
-import '../widgets/campo_taller.dart';
-import '../widgets/top_app_bar_widget.dart';
+import '../widgets/action_button.dart';
+import '../widgets/app_tab_bar.dart';
+import '../widgets/destructive_row.dart';
+import '../widgets/form_alert.dart';
+import '../widgets/group_footnote.dart';
+import '../widgets/inset_group.dart';
+import '../widgets/labeled_field_row.dart';
+import '../widgets/page_heading.dart';
+import '../widgets/section_header.dart';
+import '../widgets/status_note.dart';
+import '../widgets/tab_page.dart';
 
-/// Pantalla "Mi Perfil": datos de contacto, ticket activo y accesos directos.
+/// Perfil: the client updates the phone they sign in with and, optionally, their NIP.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.profile = UserProfile.mock});
 
@@ -22,338 +33,189 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const int _perfilIndex = 3;
+  static const _labelWidth = 96.0;
 
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nombreCtrl;
-  late final TextEditingController _telefonoCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _nombreCtrl = TextEditingController(text: widget.profile.fullName);
-    _telefonoCtrl = TextEditingController(text: widget.profile.phone);
-  }
+  late final _phoneController = TextEditingController(text: widget.profile.phone);
+  final _currentNipController = TextEditingController();
+  final _newNipController = TextEditingController();
+  late String _savedPhone = widget.profile.phone;
+  FieldProblem<ProfileField>? _shownProblem;
+  bool _wasSaved = false;
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
-    _telefonoCtrl.dispose();
+    _phoneController.dispose();
+    _currentNipController.dispose();
+    _newNipController.dispose();
     super.dispose();
   }
 
-  void _guardar() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    _mostrarMensaje(AppConstants.profileSaved);
-  }
-
-  void _mostrarMensaje(String texto) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
-  }
-
-  Future<void> _confirmarSalida() async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surfaceCanvas,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.borderStrong, width: 2),
-        ),
-        title: Text(AppConstants.logoutConfirmTitle, style: AppText.headlineSm),
-        content: Text(
-          'Se desvinculará el Ticket ${widget.profile.ticket} para ingresar '
-          'otro número de cliente.',
-          style: AppText.bodyMd,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(AppConstants.cancelLabel, style: AppText.labelLg),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              AppConstants.logoutLabelShort,
-              style: AppText.labelLg.copyWith(color: AppColors.errorRed),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // `mounted` evita usar el BuildContext si la pantalla se cerró durante el await.
-    if (confirmado == true && mounted) {
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
-    }
-  }
-
-  void _onNavTap(int index) {
-    if (index == 0) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.services);
-    } else if (index == 2) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
-    } else if (index != _perfilIndex) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Esta sección estará disponible próximamente.'),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfaceCanvas,
-      appBar: TopAppBarWidget(
-        onHelpPressed: () => _mostrarMensaje('Ayuda del Taller'),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-            children: [
-              Text(AppConstants.profileTitle, style: AppText.headlineXlMobile),
-              const SizedBox(height: 4),
-              Text(
-                AppConstants.profileSubtitle,
-                style: AppText.bodySm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _TarjetaTicket(ticket: widget.profile.ticket),
-              const SizedBox(height: 24),
-              _FormularioDatos(
-                formKey: _formKey,
-                nombreCtrl: _nombreCtrl,
-                telefonoCtrl: _telefonoCtrl,
-                onGuardar: _guardar,
-              ),
-              const SizedBox(height: 24),
-              _AccesosDirectos(
-                onCitas: () => _mostrarMensaje(AppConstants.appointmentsLabel),
-                onSalir: _confirmarSalida,
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: BottomNavBarWidget(
-        currentIndex: _perfilIndex,
-        onTap: _onNavTap,
-      ),
-    );
-  }
-}
-
-class _TarjetaTicket extends StatelessWidget {
-  const _TarjetaTicket({required this.ticket});
-
-  final String ticket;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCanvas,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderStrong, width: 2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.ticketYellow,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.borderStrong, width: 2),
-            ),
-            child: const Icon(
-              Icons.confirmation_number_outlined,
-              color: AppColors.borderStrong,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppConstants.ticketLabel.toUpperCase(),
-                style: AppText.labelSm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text('#$ticket', style: AppText.ticketBadge),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FormularioDatos extends StatelessWidget {
-  const _FormularioDatos({
-    required this.formKey,
-    required this.nombreCtrl,
-    required this.telefonoCtrl,
-    required this.onGuardar,
-  });
-
-  final GlobalKey<FormState> formKey;
-  final TextEditingController nombreCtrl;
-  final TextEditingController telefonoCtrl;
-  final VoidCallback onGuardar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCanvas,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderStrong, width: 2),
-      ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final invalidField = _shownProblem?.field;
+    return TabPage(
+      tab: AppTab.profile,
+      children: [
+        const PageHeading('Perfil'),
+        _IdentityCard(name: widget.profile.fullName, initials: widget.profile.initials, phone: _savedPhone),
+        const SectionHeader('Celular'),
+        InsetGroup(children: [_phoneRow(invalidField)]),
+        const GroupFootnote('Con este número entras y te avisamos por WhatsApp.'),
+        const SectionHeader('NIP'),
+        InsetGroup(
           children: [
-            CampoTaller(
-              etiqueta: AppConstants.nameLabel,
-              icono: Icons.person_outline,
-              hint: 'Ej: Carlos Ruiz',
-              controller: nombreCtrl,
-              teclado: TextInputType.name,
-              textInputAction: TextInputAction.next,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? AppConstants.nameRequired
-                  : null,
-            ),
-            const SizedBox(height: 20),
-            CampoTaller(
-              etiqueta: AppConstants.phoneLabel,
-              icono: Icons.call_outlined,
-              hint: 'Ej: 998 123 4567',
-              controller: telefonoCtrl,
-              teclado: TextInputType.phone,
-              formatters: [TelefonoFormatter()],
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => onGuardar(),
-              validator: (v) {
-                final digitos = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                return digitos.length == 10 ? null : AppConstants.phoneRequired;
-              },
-            ),
-            const SizedBox(height: 28),
-            BotonTaller(
-              texto: AppConstants.saveButton,
-              icono: Icons.check_circle_outline,
-              onPressed: onGuardar,
-            ),
+            _nipRow('Actual', _currentNipController, isInvalid: invalidField == ProfileField.currentNip),
+            _nipRow('Nuevo', _newNipController, isInvalid: invalidField == ProfileField.newNip),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AccesosDirectos extends StatelessWidget {
-  const _AccesosDirectos({required this.onCitas, required this.onSalir});
-
-  final VoidCallback onCitas;
-  final VoidCallback onSalir;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            AppConstants.shortcutsLabel.toUpperCase(),
-            style: AppText.labelSm.copyWith(
-              color: AppColors.outline,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCanvas,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderStrong, width: 2),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              _AccesoTile(
-                icono: Icons.calendar_month_outlined,
-                etiqueta: AppConstants.appointmentsLabel,
-                onTap: onCitas,
-              ),
-              const Divider(
-                height: 2,
-                thickness: 2,
-                color: AppColors.borderSubtle,
-              ),
-              _AccesoTile(
-                icono: Icons.logout_rounded,
-                etiqueta: AppConstants.logoutLabel,
-                onTap: onSalir,
-                color: AppColors.errorRed,
-              ),
-            ],
-          ),
-        ),
+        const GroupFootnote('No es para pagar. Déjalo vacío si no lo cambias.'),
+        const SizedBox(height: 24),
+        _saveArea(),
+        const SizedBox(height: 24),
+        DestructiveRow(label: 'Cerrar sesión', onTap: _signOut),
       ],
     );
   }
+
+  Widget _phoneRow(ProfileField? invalidField) {
+    return LabeledFieldRow(
+      label: 'Número',
+      hint: '998 123 4567',
+      controller: _phoneController,
+      labelWidth: _labelWidth,
+      isInvalid: invalidField == ProfileField.phone,
+      keyboardType: TextInputType.phone,
+      inputFormatters: [TelefonoFormatter()],
+      onChanged: _onEdited,
+    );
+  }
+
+  Widget _nipRow(String label, TextEditingController controller, {required bool isInvalid}) {
+    return LabeledFieldRow(
+      label: label,
+      hint: '4 dígitos',
+      controller: controller,
+      labelWidth: _labelWidth,
+      isInvalid: isInvalid,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(LoginForm.nipLength),
+      ],
+      obscureText: true,
+      onChanged: _onEdited,
+    );
+  }
+
+  // Any edit takes back both the message and "Guardamos tus cambios": they describe the last save.
+  void _onEdited(String _) {
+    if (_shownProblem == null && !_wasSaved) return;
+    setState(() {
+      _shownProblem = null;
+      _wasSaved = false;
+    });
+  }
+
+  Widget _saveArea() {
+    final problem = _shownProblem;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 10,
+      children: [
+        if (problem != null) FormAlert(problem.message),
+        if (_wasSaved)
+          const StatusNote('Guardamos tus cambios')
+        else
+          ActionButton.primary(label: 'Guardar cambios', onPressed: _save),
+      ],
+    );
+  }
+
+  void _save() {
+    final problem = _currentProblem();
+    setState(() {
+      _shownProblem = problem;
+      if (problem == null) _keepChanges();
+    });
+  }
+
+  FieldProblem<ProfileField>? _currentProblem() {
+    final form = ProfileForm(
+      phone: _phoneController.text,
+      currentNip: _currentNipController.text,
+      newNip: _newNipController.text,
+    );
+    return form.firstProblem(currentNipMatches: DemoClientAccess.hasNip(form.currentNip));
+  }
+
+  // Until the API exists, nothing leaves the device: the card shows the new phone and the NIPs are wiped.
+  void _keepChanges() {
+    _savedPhone = _phoneController.text;
+    _currentNipController.clear();
+    _newNipController.clear();
+    _wasSaved = true;
+  }
+
+  void _signOut() {
+    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
+  }
 }
 
-class _AccesoTile extends StatelessWidget {
-  const _AccesoTile({
-    required this.icono,
-    required this.etiqueta,
-    required this.onTap,
-    this.color = AppColors.borderStrong,
-  });
+class _IdentityCard extends StatelessWidget {
+  const _IdentityCard({required this.name, required this.initials, required this.phone});
 
-  final IconData icono;
-  final String etiqueta;
-  final VoidCallback onTap;
-  final Color color;
+  final String name;
+  final String initials;
+  final String phone;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icono, color: color, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  etiqueta,
-                  style: AppText.labelMd.copyWith(color: color),
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: color, size: 22),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCanvas,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        spacing: 14,
+        children: [
+          _InitialsAvatar(initials),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: AppText.sheetTitle.copyWith(fontSize: 20, height: 26 / 20, letterSpacing: 0)),
+                Text(phone, style: AppText.callout),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InitialsAvatar extends StatelessWidget {
+  const _InitialsAvatar(this.initials);
+
+  final String initials;
+
+  @override
+  Widget build(BuildContext context) {
+    // The name beside it already says who this is.
+    return ExcludeSemantics(
+      child: Container(
+        width: 52,
+        height: 52,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
+        child: Text(
+          initials,
+          style: AppText.button.copyWith(
+            fontSize: 19,
+            height: 24 / 19,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
           ),
         ),
       ),
