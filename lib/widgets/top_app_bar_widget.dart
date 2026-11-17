@@ -4,60 +4,70 @@ import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
 
 class TopAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
+  final bool showBrand;
   final VoidCallback? onHelpPressed;
 
-  const TopAppBarWidget({super.key, this.onHelpPressed});
+  const TopAppBarWidget({
+    super.key,
+    this.showBrand = true,
+    this.onHelpPressed,
+  });
 
   @override
-  Size get preferredSize => const Size.fromHeight(64.0);
+  Size get preferredSize => const Size.fromHeight(60.0);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceCanvas,
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.borderStrong,
-            width: 2.0,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (showBrand)
               Row(
                 children: [
                   const Icon(
-                    Icons.precision_manufacturing_outlined,
-                    color: AppColors.borderStrong,
-                    size: 26,
+                    Icons.content_cut,
+                    color: AppColors.primaryDark,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     AppConstants.appTitle,
-                    style: AppText.headlineSm.copyWith(
-                      letterSpacing: 0.5,
+                    style: AppText.labelSm.copyWith(
                       fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ],
-              ),
-              IconButton(
-                onPressed: onHelpPressed ?? () {},
-                icon: const Icon(
-                  Icons.help_outline_rounded,
-                  color: AppColors.borderStrong,
-                  size: 24,
+              )
+            else
+              const SizedBox.shrink(),
+            InkWell(
+              onTap: onHelpPressed,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceSubtle,
+                  shape: BoxShape.circle,
                 ),
-                splashRadius: 24,
+                alignment: Alignment.center,
+                child: const Text(
+                  '?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

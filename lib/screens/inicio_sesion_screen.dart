@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../routes/app_routes.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
+import '../utils/app_constants.dart';
 import '../utils/telefono_formatter.dart';
-import '../widgets/boton_taller.dart';
-import '../widgets/campo_taller.dart';
-import '../routes/app_routes.dart';
+import '../widgets/top_app_bar_widget.dart';
 
 class InicioSesionScreen extends StatefulWidget {
   const InicioSesionScreen({super.key, this.onIngresar});
 
-  final void Function(String telefono, String ticket)? onIngresar;
+  final void Function(String telefono, String nip)? onIngresar;
 
   @override
   State<InicioSesionScreen> createState() => _InicioSesionScreenState();
@@ -20,20 +20,20 @@ class InicioSesionScreen extends StatefulWidget {
 class _InicioSesionScreenState extends State<InicioSesionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _telefonoCtrl = TextEditingController();
-  final _ticketCtrl = TextEditingController();
+  final _nipCtrl = TextEditingController();
 
   @override
   void dispose() {
     _telefonoCtrl.dispose();
-    _ticketCtrl.dispose();
+    _nipCtrl.dispose();
     super.dispose();
   }
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final telefono = _telefonoCtrl.text.replaceAll(RegExp(r'\D'), '');
-    final ticket = _ticketCtrl.text.trim();
-    widget.onIngresar?.call(telefono, ticket);
+    final nip = _nipCtrl.text.trim();
+    widget.onIngresar?.call(telefono, nip);
 
     Navigator.of(context).pushReplacementNamed(AppRoutes.services);
   }
@@ -43,20 +43,16 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.surfaceCanvas,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.borderStrong, width: 2),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Ayuda del taller', style: AppText.headlineSm),
         content: Text(
-          'Escriba su número de teléfono y el número de ticket que viene '
-          'en su comprobante. No necesita contraseña.',
+          'Escribe tu número de celular y tu NIP de 4 dígitos para consultar tus pedidos.',
           style: AppText.bodyMd,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Entendido', style: AppText.labelLg),
+            child: const Text('Entendido', style: TextStyle(color: AppColors.primaryDark)),
           ),
         ],
       ),
@@ -66,82 +62,268 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceCanvas,
-      appBar: _BarraSuperior(onAyuda: _mostrarAyuda),
+      backgroundColor: AppColors.background,
+      appBar: TopAppBarWidget(
+        showBrand: true,
+        onHelpPressed: _mostrarAyuda,
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 448),
+            constraints: const BoxConstraints(maxWidth: 440),
             child: LayoutBuilder(
               builder: (context, c) => SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: c.maxHeight - 24),
+                  constraints: BoxConstraints(minHeight: c.maxHeight - 32),
                   child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _InsigniaCalm(),
-                        const SizedBox(height: 12),
-                        Text('Bienvenido a su Taller',
-                            style: AppText.headlineXlMobile),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Consulte el avance de su ropa sin necesidad de '
-                          'contraseñas.',
-                          style: AppText.bodyMd
-                              .copyWith(fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 24),
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              CampoTaller(
-                                etiqueta: 'Número de teléfono',
-                                icono: Icons.call_outlined,
-                                ayuda: '10 dígitos',
-                                hint: 'Ej: 998 123 4567',
-                                controller: _telefonoCtrl,
-                                teclado: TextInputType.phone,
-                                textInputAction: TextInputAction.next,
-                                formatters: [TelefonoFormatter()],
-                                validator: (v) {
-                                  final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                                  return d.length == 10
-                                      ? null
-                                      : 'Escriba los 10 dígitos de su teléfono';
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              CampoTaller(
-                                etiqueta: 'Número de Ticket',
-                                icono: Icons.confirmation_number_outlined,
-                                hint: 'Ej: 7720',
-                                controller: _ticketCtrl,
-                                negritaEnValor: true,
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => _enviar(),
-                                formatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
-                                validator: (v) =>
-                                    (v == null || v.trim().isEmpty)
-                                        ? 'Escriba el número de su ticket'
-                                        : null,
-                              ),
-                              const SizedBox(height: 28),
-                              BotonTaller(
-                                texto: 'Entrar a mis prendas',
-                                icono: Icons.check_circle_outline,
-                                onPressed: _enviar,
-                              ),
-                            ],
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            AppConstants.loginTitle,
+                            style: AppText.headlineXlMobile.copyWith(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryDark,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        const _PieTaller(),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            AppConstants.loginSubtitle,
+                            style: AppText.bodyMd.copyWith(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // Tarjeta contenedora de Celular y NIP
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceCanvas,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 80,
+                                        child: Text(
+                                          AppConstants.labelPhone,
+                                          style: AppText.labelLg.copyWith(
+                                            color: AppColors.primaryDark,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _telefonoCtrl,
+                                          keyboardType: TextInputType.phone,
+                                          textInputAction: TextInputAction.next,
+                                          inputFormatters: [TelefonoFormatter()],
+                                          style: AppText.bodyLg.copyWith(
+                                            color: AppColors.primaryDark,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText: AppConstants.hintPhone,
+                                            hintStyle: AppText.bodyLg.copyWith(
+                                              color: AppColors.textSubtle,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                          ),
+                                          validator: (v) {
+                                            final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
+                                            return d.length == 10
+                                                ? null
+                                                : 'Ingresa los 10 dígitos';
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 1, thickness: 1, color: AppColors.dividerColor),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 80,
+                                        child: Text(
+                                          AppConstants.labelNip,
+                                          style: AppText.labelLg.copyWith(
+                                            color: AppColors.primaryDark,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _nipCtrl,
+                                          keyboardType: TextInputType.number,
+                                          textInputAction: TextInputAction.done,
+                                          obscureText: true,
+                                          maxLength: 4,
+                                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                          style: AppText.bodyLg.copyWith(
+                                            color: AppColors.primaryDark,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          decoration: InputDecoration(
+                                            counterText: '',
+                                            hintText: AppConstants.hintNip,
+                                            hintStyle: AppText.bodyLg.copyWith(
+                                              color: AppColors.textSubtle,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                          ),
+                                          validator: (v) => (v == null || v.trim().length != 4)
+                                              ? 'Ingresa tu NIP de 4 dígitos'
+                                              : null,
+                                          onFieldSubmitted: (_) => _enviar(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Botón "Ver mis pedidos"
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: _enviar,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryDark,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: Text(
+                                AppConstants.btnVerPedidos,
+                                style: AppText.labelLg.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Enlace "Olvidé mi NIP"
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Comunícate con el taller para recuperar tu NIP.'),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                AppConstants.btnOlvideNip,
+                                style: AppText.labelLg.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const Spacer(),
+
+                          // Sección inferior "¿Primera vez?"
+                          Text(
+                            AppConstants.labelPrimeraVez,
+                            style: AppText.labelSm.copyWith(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).pushReplacementNamed(AppRoutes.services);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceCanvas,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryDark,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.calendar_month_outlined,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          AppConstants.titleAgendaCita,
+                                          style: AppText.bodyLg.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            color: AppColors.primaryDark,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          AppConstants.subtitleAgendaCita,
+                                          style: AppText.bodySm.copyWith(
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: AppColors.textSubtle,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -149,114 +331,6 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Barra superior con logo, nombre y botón de ayuda (borde inferior grueso).
-class _BarraSuperior extends StatelessWidget implements PreferredSizeWidget {
-  const _BarraSuperior({required this.onAyuda});
-
-  final VoidCallback onAyuda;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(66);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceCanvas,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderStrong, width: 2),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: 64,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                const Icon(Icons.precision_manufacturing_outlined,
-                    color: AppColors.borderStrong, size: 26),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'COSTURANDO A LA MEDIDA',
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.headlineSm.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Ayuda del taller',
-                  constraints:
-                      const BoxConstraints(minWidth: 48, minHeight: 48),
-                  onPressed: onAyuda,
-                  icon: const Icon(Icons.help_outline,
-                      color: AppColors.borderStrong, size: 26),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-class _InsigniaCalm extends StatelessWidget {
-  const _InsigniaCalm();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.ticketYellow,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderStrong, width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.borderStrong,
-            offset: Offset(2, 2),
-            blurRadius: 0,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.content_cut,
-              color: AppColors.borderStrong, size: 20),
-          const SizedBox(width: 8),
-          Text('CALM', style: AppText.labelMd),
-        ],
-      ),
-    );
-  }
-}
-
-class _PieTaller extends StatelessWidget {
-  const _PieTaller();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.only(top: 16, bottom: 24),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: Text(
-        'COSTURANDO A LA MEDIDA',
-        textAlign: TextAlign.center,
-        style: AppText.labelSm.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -8,7 +8,7 @@ class BottomNavBarWidget extends StatelessWidget {
 
   const BottomNavBarWidget({
     super.key,
-    this.currentIndex = 0,
+    this.currentIndex = 1, // 0: Pedidos, 1: Servicios, 2: Perfil
     required this.onTap,
   });
 
@@ -19,8 +19,8 @@ class BottomNavBarWidget extends StatelessWidget {
         color: AppColors.surfaceCanvas,
         border: Border(
           top: BorderSide(
-            color: AppColors.borderStrong,
-            width: 2.0,
+            color: AppColors.dividerColor,
+            width: 1.0,
           ),
         ),
       ),
@@ -31,10 +31,9 @@ class BottomNavBarWidget extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.style, 'Servicios'),
-              _buildNavItem(1, Icons.calendar_month_outlined, 'Agendar Cita'),
-              _buildNavItem(2, Icons.receipt_long_outlined, 'Mis Pedidos'),
-              _buildNavItem(3, Icons.person_outline, 'Perfil'),
+              _buildNavItem(0, Icons.assignment_outlined, 'Pedidos'),
+              _buildNavItem(1, Icons.sell_outlined, 'Servicios'),
+              _buildNavItem(2, Icons.person_outline, 'Perfil'),
             ],
           ),
         ),
@@ -44,25 +43,47 @@ class BottomNavBarWidget extends StatelessWidget {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final bool isSelected = currentIndex == index;
-    final Color color = isSelected ? AppColors.borderStrong : AppColors.outline;
+
+    if (isSelected) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSubtle,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: AppColors.primaryDark, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppText.labelSm.copyWith(
+                color: AppColors.primaryDark,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return InkWell(
       onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
+            Icon(icon, color: AppColors.primaryDark, size: 22),
             const SizedBox(height: 2),
             Text(
               label,
               style: AppText.labelSm.copyWith(
-                color: color,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: AppColors.primaryDark,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
