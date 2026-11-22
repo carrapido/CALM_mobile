@@ -1,13 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../models/client_action.dart';
 import '../models/order.dart';
 import '../routes/app_routes.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../widgets/action_button.dart';
 import '../widgets/app_tab_bar.dart';
 import '../widgets/destructive_row.dart';
+import '../widgets/form_alert.dart';
 import '../widgets/help_sheet.dart';
 import '../widgets/icon_row.dart';
 import '../widgets/inset_group.dart';
@@ -27,8 +30,13 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  bool _isOnTheWay = false;
+  late bool _isOnTheWay = widget.order.status == OrderStatus.onTheWay;
   bool _directionsOpened = false;
+  bool _isActing = false;
+
+  // What the workshop refused, shown where the client asked.
+  String? _onTheWayRefusal;
+  String? _cancelRefusal;
 
   Order get _order => widget.order;
 
@@ -83,11 +91,34 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _onTheWayAction() {
     if (_isOnTheWay) return const StatusNote('El taller ya sabe que vas en camino');
-    return ActionButton.primary(
-      label: 'Voy en camino',
-      icon: Icons.navigation_outlined,
-      onPressed: () => setState(() => _isOnTheWay = true),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_onTheWayRefusal case final refusal?) FormAlert(refusal),
+        ActionButton.primary(
+          label: 'Voy en camino',
+          icon: Icons.navigation_outlined,
+          onPressed: _tellOnTheWay,
+        ),
+      ],
     );
+  }
+
+  Future<void> _tellOnTheWay() async {
+    if (_isActing) return;
+    setState(() => _isActing = true);
+    final outcome = await ClientDataScope.of(context).markOnMyWay(_order.ticket);
+    if (!mounted) return;
+    setState(() {
+      _isActing = false;
+      switch (outcome) {
+        case ActionDone():
+          _isOnTheWay = true;
+          _onTheWayRefusal = null;
+        case ActionRefused(:final message):
+          _onTheWayRefusal = message;
+      }
+    });
   }
 
   Widget _directionsAction() {
@@ -105,6 +136,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return [
       const SizedBox(height: 24),
       DestructiveRow(label: 'Cancelar cita', onTap: _askToCancel),
+      if (_cancelRefusal case final refusal?) FormAlert(refusal),
     ];
   }
 
@@ -114,7 +146,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       barrierColor: AppColors.sheetScrim,
       builder: (popupContext) => _CancelAppointmentSheet(
         freedSlotMessage: _freedSlotMessage(),
-        onCancel: _cancelAppointment,
+        onCancel: () {
+          Navigator.of(popupContext).pop();
+          _cancelAppointment();
+        },
         onKeep: () => Navigator.of(popupContext).pop(),
       ),
     );
@@ -126,8 +161,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return 'Tu horario del $slot queda libre para alguien más.';
   }
 
-  void _cancelAppointment() {
-    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
+  /// The workshop cancels it only more than 24 hours ahead and before it became an order; a
+  /// refusal keeps the client on her appointment and says why.
+  Future<void> _cancelAppointment() async {
+    if (_isActing) return;
+    setState(() => _isActing = true);
+    final outcome = await ClientDataScope.of(context).cancelAppointment(_order.ticket);
+    if (!mounted) return;
+    switch (outcome) {
+      case ActionDone():
+        Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
+      case ActionRefused(:final message):
+        setState(() {
+          _isActing = false;
+          _cancelRefusal = message;
+        });
+    }
   }
 }
 
@@ -188,7 +237,9 @@ class _ProgressSteps extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = _steps.indexWhere((step) => step.status == current);
+    // On her way, the order is still at the workshop's "Listo" step.
+    final reached = current == OrderStatus.onTheWay ? OrderStatus.ready : current;
+    final currentIndex = _steps.indexWhere((candidate) => candidate.status == reached);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 4,

@@ -3,14 +3,17 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../models/catalog.dart';
 import '../models/service_item.dart';
 import '../models/service_selection.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
 import '../widgets/app_tab_bar.dart';
 import '../widgets/group_footnote.dart';
 import '../widgets/inset_group.dart';
+import '../widgets/loaded.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/press_scale.dart';
 import '../widgets/schedule_sheet.dart';
@@ -18,14 +21,32 @@ import '../widgets/section_header.dart';
 import '../widgets/tab_page.dart';
 
 /// Servicios: the client marks the repairs they need and moves on to choose a time.
-class ServicesScreen extends StatefulWidget {
+class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
+  static const _heading =
+      PageHeading(AppConstants.servicesTitle, subtitle: AppConstants.servicesSubtitle);
+
   @override
-  State<ServicesScreen> createState() => _ServicesScreenState();
+  Widget build(BuildContext context) {
+    return Loaded<Catalog>(
+      load: ClientDataScope.of(context).catalog,
+      pending: (status) => TabPage(tab: AppTab.services, children: [_heading, status]),
+      builder: (_, catalog) => _CatalogView(catalog),
+    );
+  }
 }
 
-class _ServicesScreenState extends State<ServicesScreen> {
+class _CatalogView extends StatefulWidget {
+  const _CatalogView(this.catalog);
+
+  final Catalog catalog;
+
+  @override
+  State<_CatalogView> createState() => _CatalogViewState();
+}
+
+class _CatalogViewState extends State<_CatalogView> {
   final _selectedIds = <String>{};
   bool _isUrgent = false;
 
@@ -38,10 +59,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ? null
           : _SelectionBar(selection: selection, onChooseSchedule: () => _openSchedule(selection)),
       children: [
-        const PageHeading(AppConstants.servicesTitle, subtitle: AppConstants.servicesSubtitle),
+        ServicesScreen._heading,
         InsetGroup(
           children: [
-            for (final service in ServiceItem.catalog)
+            for (final service in widget.catalog.services)
               _ServiceRow(
                 service,
                 isSelected: _selectedIds.contains(service.id),
@@ -61,10 +82,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
   ServiceSelection _currentSelection() {
     return ServiceSelection(
       services: [
-        for (final service in ServiceItem.catalog)
+        for (final service in widget.catalog.services)
           if (_selectedIds.contains(service.id)) service,
       ],
       isUrgent: _isUrgent,
+      urgentSurchargeMxn: widget.catalog.urgentSurchargeMxn,
     );
   }
 

@@ -1,10 +1,16 @@
+import 'package:calm_mobil/models/appointment_agenda.dart';
+import 'package:calm_mobil/models/booking.dart';
+import 'package:calm_mobil/models/booking_form.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/service_selection.dart';
 import 'package:calm_mobil/routes/app_routes.dart';
+import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:calm_mobil/widgets/schedule_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fake_client_data.dart';
 
 const waistSelection = ServiceSelection(
   services: [ServiceItem(id: 'waist', title: 'Ajuste de cintura', priceMxn: 180)],
@@ -108,13 +114,100 @@ void main() {
 
     expect(find.text('Agendar cita'), findsNothing);
   });
+
+  testWidgets('says when the month has no free slot left', (tester) async {
+    const full = AppointmentAgenda(
+      year: 2026,
+      month: 11,
+      monthName: 'Noviembre 2026',
+      monthLongName: 'noviembre',
+      daysInMonth: 30,
+      firstWeekday: 7,
+      today: 30,
+      nowTime: '18:00',
+      slotsByWeekday: {1: ['10:00', '17:30']},
+      blockedDays: {},
+      bookedSlots: {},
+    );
+    await openSheet(tester, data: FakeClientData(agendaResult: full));
+
+    expect(find.text('Ya no quedan horarios libres este mes. Escríbele al taller.'), findsOneWidget);
+    expect(find.textContaining('Confirmar'), findsNothing);
+  });
+
+  testWidgets('books on the server what the client chose', (tester) async {
+    final data = FakeClientData();
+    await openSheet(tester, data: data);
+
+    await confirmWithData(tester);
+
+    final booking = data.bookings.single;
+    expect(booking.name, 'Ana López');
+    expect(booking.phoneDigits, '9981234567');
+    expect(booking.nip, '1357');
+    expect(booking.date, '2026-11-05');
+    expect(booking.time, '11:00');
+    expect(booking.selection.services.map((service) => service.id), ['waist']);
+    expect(booking.selection.isUrgent, isFalse);
+  });
+
+  testWidgets('does not book while the data is incomplete', (tester) async {
+    final data = FakeClientData();
+    await openSheet(tester, data: data);
+
+    await tester.tap(find.text('Confirmar · Jue 5, 11:00'));
+    await tester.pump();
+
+    expect(data.bookings, isEmpty);
+  });
+
+  testWidgets('shows the ticket the workshop assigned', (tester) async {
+    await openSheet(tester, data: FakeClientData(bookingResult: const BookingConfirmed('4821')));
+
+    await confirmWithData(tester);
+
+    expect(find.text('4821'), findsOneWidget);
+    expect(find.text('Cita agendada'), findsOneWidget);
+  });
+
+  testWidgets('says why the workshop refused the booking and marks the field', (tester) async {
+    const refusal = BookingRefused(
+      'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.',
+      field: BookingField.nip,
+    );
+    await openSheet(tester, data: FakeClientData(bookingResult: refusal));
+
+    await confirmWithData(tester);
+
+    expect(find.text(refusal.message), findsOneWidget);
+    expect(find.text('Cita agendada'), findsNothing);
+    expect(tester.widget<Text>(find.text('NIP')).style?.color, AppColors.errorText);
+  });
+
+  testWidgets('moves off a slot that was taken meanwhile', (tester) async {
+    await openSheet(tester, data: FakeClientData(bookingResult: const BookingSlotTaken()));
+
+    await confirmWithData(tester);
+
+    expect(find.text('Ese horario se acaba de ocupar. Elige otro.'), findsOneWidget);
+    expect(find.text('Confirmar · Jue 5, 10:30'), findsOneWidget);
+  });
+
+  testWidgets('says when the agenda cannot load', (tester) async {
+    await openSheet(tester, data: FakeClientData()..fails = true);
+
+    expect(
+      find.text('No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.'),
+      findsOneWidget,
+    );
+  });
 }
 
-Future<void> openSheet(WidgetTester tester) async {
+Future<void> openSheet(WidgetTester tester, {FakeClientData? data}) async {
   tester.view.physicalSize = const Size(390, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(
+  await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       routes: {
         AppRoutes.initial: (context) => Scaffold(
@@ -129,7 +222,7 @@ Future<void> openSheet(WidgetTester tester) async {
         },
       },
     ),
-  );
+  ));
   await tester.tap(find.text('abrir hoja'));
   await tester.pumpAndSettle();
 }

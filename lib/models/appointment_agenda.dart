@@ -1,38 +1,53 @@
-/// A month of the workshop's agenda as the API would send it: business hours minus past days,
-/// the closed weekday, blocked days and bookings. Weekdays run from 1 (Monday) to 7 (Sunday).
+import '../utils/spanish_dates.dart' as dates;
+
+/// A month of the workshop's agenda: business hours per weekday minus past days, blocked days,
+/// bookings and, today, the slots that have already started. Weekdays run from 1 (Monday) to
+/// 7 (Sunday); times are Cancún wall-clock "HH:MM".
 class AppointmentAgenda {
   const AppointmentAgenda({
+    required this.year,
+    required this.month,
     required this.monthName,
     required this.monthLongName,
     required this.daysInMonth,
     required this.firstWeekday,
     required this.today,
-    required this.closedWeekday,
+    required this.nowTime,
+    required this.slotsByWeekday,
     required this.blockedDays,
-    required this.businessSlots,
-    required this.todaySlots,
     required this.bookedSlots,
   });
 
-  /// The panel's demo agenda: the 1st is a Sunday, today is Wednesday the 4th,
-  /// Sundays are closed and Friday the 6th was blocked.
-  static const november2026 = AppointmentAgenda(
-    monthName: 'Noviembre 2026',
-    monthLongName: 'noviembre',
-    daysInMonth: 30,
-    firstWeekday: 7,
-    today: 4,
-    closedWeekday: 7,
-    blockedDays: {6},
-    businessSlots: [
-      '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-    ],
-    todaySlots: ['15:30', '16:00', '16:30', '17:00', '17:30'],
-    bookedSlots: {
-      5: ['12:00', '12:30', '14:30'],
-    },
-  );
+  /// What `booking_calendar` answers: today and now, the weekly hours, and this month's blocked
+  /// days and booked slots from today on. Slots follow the panel's rule, every 30 minutes from
+  /// opening up to, but not including, closing; a weekday with no hours is closed.
+  factory AppointmentAgenda.fromCalendar(Map<String, dynamic> calendar) {
+    final today = DateTime.parse(calendar['today'] as String);
+    final month = dates.monthName(today.month);
+    return AppointmentAgenda(
+      year: today.year,
+      month: today.month,
+      monthName: '${month[0].toUpperCase()}${month.substring(1)} ${today.year}',
+      monthLongName: month,
+      daysInMonth: DateTime(today.year, today.month + 1, 0).day,
+      firstWeekday: DateTime(today.year, today.month).weekday,
+      today: today.day,
+      nowTime: calendar['now'] as String,
+      slotsByWeekday: {
+        for (final hours in (calendar['weekly'] as List).cast<Map<String, dynamic>>())
+          _weekdayNumbers[hours['weekday']]!: _slotsBetween(hours['opens_at'], hours['closes_at']),
+      },
+      blockedDays: {
+        for (final date in (calendar['blocked'] as List).cast<String>()) DateTime.parse(date).day,
+      },
+      bookedSlots: _bookedByDay((calendar['booked'] as List).cast<Map<String, dynamic>>()),
+    );
+  }
+
+  static const _weekdayNumbers = {
+    'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4,
+    'friday': 5, 'saturday': 6, 'sunday': 7,
+  };
 
   static const weekdayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   static const wheelMinutes = ['00', '30'];
@@ -41,25 +56,62 @@ class AppointmentAgenda {
     'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo',
   ];
 
+  final int year;
+  final int month;
   final String monthName;
   final String monthLongName;
   final int daysInMonth;
   final int firstWeekday;
   final int today;
-  final int closedWeekday;
+
+  /// Today's slots start after this time; one that has started is not free.
+  final String nowTime;
+  final Map<int, List<String>> slotsByWeekday;
   final Set<int> blockedDays;
-  final List<String> businessSlots;
-  final List<String> todaySlots;
   final Map<int, List<String>> bookedSlots;
 
   List<String> freeSlotsFor(int day) {
-    if (!_isOpen(day)) return const [];
-    if (day == today) return todaySlots;
+    if (day < today || blockedDays.contains(day)) return const [];
     final booked = bookedSlots[day] ?? const [];
     return [
-      for (final slot in businessSlots)
-        if (!booked.contains(slot)) slot,
+      for (final slot in slotsByWeekday[weekdayOf(day)] ?? const <String>[])
+        if (!booked.contains(slot) && (day != today || slot.compareTo(nowTime) > 0)) slot,
     ];
+  }
+
+  /// [day] of this month as the server writes a date: "2026-11-05".
+  String isoDate(int day) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '$year-${twoDigits(month)}-${twoDigits(day)}';
+  }
+
+  /// This agenda with [time] of [day] booked, as when someone took it meanwhile.
+  AppointmentAgenda withBooked(int day, String time) {
+    return AppointmentAgenda(
+      year: year,
+      month: month,
+      monthName: monthName,
+      monthLongName: monthLongName,
+      daysInMonth: daysInMonth,
+      firstWeekday: firstWeekday,
+      today: today,
+      nowTime: nowTime,
+      slotsByWeekday: slotsByWeekday,
+      blockedDays: blockedDays,
+      bookedSlots: {
+        ...bookedSlots,
+        day: [...?bookedSlots[day], time],
+      },
+    );
+  }
+
+  /// Where "Agendar cita" opens: the first free day after today, or today when it is the only
+  /// one left in the month; null when the month has no free slot at all.
+  int? get firstBookableDay {
+    for (var day = today + 1; day <= daysInMonth; day++) {
+      if (isAvailable(day)) return day;
+    }
+    return isAvailable(today) ? today : null;
   }
 
   bool isAvailable(int day) => freeSlotsFor(day).isNotEmpty;
@@ -97,14 +149,28 @@ class AppointmentAgenda {
     return freeSlotsFor(day).reduce((best, slot) => distance(slot) < distance(best) ? slot : best);
   }
 
-  bool _isOpen(int day) {
-    return day >= today && weekdayOf(day) != closedWeekday && !blockedDays.contains(day);
-  }
-
   static int _hourOf(String time) => int.parse(time.split(':').first);
 
   static int _minutesOf(String time) {
     final [hours, minutes] = time.split(':').map(int.parse).toList();
     return hours * 60 + minutes;
+  }
+
+  static List<String> _slotsBetween(Object? opensAt, Object? closesAt) {
+    if (opensAt == null || closesAt == null) return const [];
+    final closing = _minutesOf(closesAt as String);
+    return [
+      for (var minutes = _minutesOf(opensAt as String); minutes < closing; minutes += 30)
+        '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')}',
+    ];
+  }
+
+  static Map<int, List<String>> _bookedByDay(List<Map<String, dynamic>> booked) {
+    final byDay = <int, List<String>>{};
+    for (final slot in booked) {
+      final day = DateTime.parse(slot['date'] as String).day;
+      byDay.putIfAbsent(day, () => []).add(slot['time'] as String);
+    }
+    return byDay;
   }
 }

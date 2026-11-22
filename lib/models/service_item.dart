@@ -7,14 +7,4 @@ class ServiceItem {
   final int? priceMxn;
 
   String get priceLabel => priceMxn == null ? 'A cotizar' : '\$$priceMxn';
-
-  /// The panel's active catalog; deactivated services are not shown to clients.
-  static const catalog = [
-    ServiceItem(id: 'waist', title: 'Ajuste de cintura', priceMxn: 180),
-    ServiceItem(id: 'party-dress', title: 'Ajuste de vestido de fiesta', priceMxn: 300),
-    ServiceItem(id: 'custom-dress', title: 'Vestido Personalizado'),
-    ServiceItem(id: 'zipper', title: 'Cambio de cierre', priceMxn: 130),
-    ServiceItem(id: 'hem', title: 'Dobladillo de pantalón', priceMxn: 100),
-    ServiceItem(id: 'patch', title: 'Parche', priceMxn: 40),
-  ];
 }

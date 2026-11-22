@@ -1,8 +1,11 @@
+import 'package:calm_mobil/models/client_action.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/order_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fake_client_data.dart';
 
 const readyOrder = Order(
   ticket: '7720',
@@ -63,11 +66,48 @@ void main() {
     await pumpDetail(tester, readyOrder);
 
     await tester.tap(find.text('Voy en camino'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Vas en camino'), findsOneWidget);
     expect(find.text('El taller ya sabe que vas en camino'), findsOneWidget);
     expect(find.text('Voy en camino'), findsNothing);
+  });
+
+  testWidgets('sends "Voy en camino" to the workshop for this order', (tester) async {
+    final data = FakeClientData();
+    await pumpDetail(tester, readyOrder, data: data);
+
+    await tester.tap(find.text('Voy en camino'));
+    await tester.pumpAndSettle();
+
+    expect(data.onTheWayTickets, ['7720']);
+  });
+
+  testWidgets('says when the workshop does not take "Voy en camino"', (tester) async {
+    const refusal = 'Tu pedido ya no está listo para recoger. Escríbele al taller.';
+    await pumpDetail(tester, readyOrder, data: FakeClientData(actionResult: const ActionRefused(refusal)));
+
+    await tester.tap(find.text('Voy en camino'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(refusal), findsOneWidget);
+    expect(find.text('Vas en camino'), findsNothing);
+    expect(find.text('Voy en camino'), findsOneWidget);
+  });
+
+  testWidgets('shows an order the client is already on her way to', (tester) async {
+    const onTheWay = Order(
+      ticket: '7720',
+      work: 'Cambio de cierre de chamarra',
+      status: OrderStatus.onTheWay,
+      amountMxn: 150,
+    );
+    await pumpDetail(tester, onTheWay);
+
+    expect(find.text('Vas en camino'), findsOneWidget);
+    expect(find.text('El taller ya sabe que vas en camino'), findsOneWidget);
+    expect(find.text('Voy en camino'), findsNothing);
+    expect(find.text('Listo'), findsOneWidget);
   });
 
   testWidgets('confirms that directions opened', (tester) async {
@@ -139,6 +179,31 @@ void main() {
     expect(find.text('entrada destino'), findsOneWidget);
   });
 
+  testWidgets('cancels this appointment on the server', (tester) async {
+    final data = FakeClientData();
+    await pumpDetail(tester, appointment, data: data);
+
+    await tester.tap(find.text('Cancelar cita'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sí, cancelar la cita'));
+    await tester.pumpAndSettle();
+
+    expect(data.cancelledTickets, ['0937']);
+  });
+
+  testWidgets('stays on the appointment when the workshop refuses to cancel it', (tester) async {
+    const refusal = 'Ya no se puede cancelar desde la app: escríbele al taller.';
+    await pumpDetail(tester, appointment, data: FakeClientData(actionResult: const ActionRefused(refusal)));
+
+    await tester.tap(find.text('Cancelar cita'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sí, cancelar la cita'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(refusal), findsOneWidget);
+    expect(find.text('entrada destino'), findsNothing);
+  });
+
   testWidgets('sends late cancellations to the workshop', (tester) async {
     const lateAppointment = Order(
       ticket: '0937',
@@ -175,8 +240,8 @@ void main() {
   });
 }
 
-Future<void> pumpDetail(WidgetTester tester, Order order) async {
-  await tester.pumpWidget(
+Future<void> pumpDetail(WidgetTester tester, Order order, {FakeClientData? data}) async {
+  await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       initialRoute: '${AppRoutes.orders}/detalle',
       routes: {
@@ -186,5 +251,5 @@ Future<void> pumpDetail(WidgetTester tester, Order order) async {
         AppRoutes.services: (_) => const Text('servicios destino'),
       },
     ),
-  );
+  ));
 }

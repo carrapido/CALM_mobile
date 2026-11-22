@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/demo_client_access.dart';
 import '../models/field_problem.dart';
 import '../models/login_form.dart';
 import '../models/profile_form.dart';
+import '../models/profile_update.dart';
 import '../models/user_profile.dart';
 import '../routes/app_routes.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/telefono_formatter.dart';
@@ -17,22 +18,38 @@ import '../widgets/form_alert.dart';
 import '../widgets/group_footnote.dart';
 import '../widgets/inset_group.dart';
 import '../widgets/labeled_field_row.dart';
+import '../widgets/loaded.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/section_header.dart';
 import '../widgets/status_note.dart';
 import '../widgets/tab_page.dart';
 
 /// Perfil: the client updates the phone they sign in with and, optionally, their NIP.
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.profile = UserProfile.mock});
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  static const _heading = PageHeading('Perfil');
+
+  @override
+  Widget build(BuildContext context) {
+    return Loaded<UserProfile>(
+      load: ClientDataScope.of(context).profile,
+      pending: (status) => TabPage(tab: AppTab.profile, children: [_heading, status]),
+      builder: (_, profile) => _ProfileView(profile),
+    );
+  }
+}
+
+class _ProfileView extends StatefulWidget {
+  const _ProfileView(this.profile);
 
   final UserProfile profile;
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<_ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileViewState extends State<_ProfileView> {
   static const _labelWidth = 96.0;
 
   late final _phoneController = TextEditingController(text: widget.profile.phone);
@@ -41,6 +58,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _savedPhone = widget.profile.phone;
   FieldProblem<ProfileField>? _shownProblem;
   bool _wasSaved = false;
+  bool _isSaving = false;
+
+  // The workshop's refusal; it may name no field, which a FieldProblem cannot express.
+  String? _refusal;
+  ProfileField? _refusedField;
 
   @override
   void dispose() {
@@ -52,11 +74,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final invalidField = _shownProblem?.field;
+    final invalidField = _refusedField ?? _shownProblem?.field;
     return TabPage(
       tab: AppTab.profile,
       children: [
-        const PageHeading('Perfil'),
+        ProfileScreen._heading,
         _IdentityCard(name: widget.profile.fullName, initials: widget.profile.initials, phone: _savedPhone),
         const SectionHeader('Celular'),
         InsetGroup(children: [_phoneRow(invalidField)]),
@@ -109,20 +131,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Any edit takes back both the message and "Guardamos tus cambios": they describe the last save.
   void _onEdited(String _) {
-    if (_shownProblem == null && !_wasSaved) return;
+    if (_shownProblem == null && !_wasSaved && _refusal == null) return;
     setState(() {
       _shownProblem = null;
       _wasSaved = false;
+      _refusal = null;
+      _refusedField = null;
     });
   }
 
   Widget _saveArea() {
-    final problem = _shownProblem;
+    final message = _refusal ?? _shownProblem?.message;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
       children: [
-        if (problem != null) FormAlert(problem.message),
+        if (message != null) FormAlert(message),
         if (_wasSaved)
           const StatusNote('Guardamos tus cambios')
         else
@@ -131,32 +155,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _save() {
-    final problem = _currentProblem();
+  /// The form's own rules first; whether the current NIP is right is the workshop's call.
+  Future<void> _save() async {
+    if (_isSaving) return;
+    final form = _form();
+    final problem = form.firstProblem(currentNipMatches: true);
+    if (problem != null) {
+      setState(() => _shownProblem = problem);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final outcome = await ClientDataScope.of(context).saveProfile(
+      ProfileChange(
+        phoneDigits: form.phoneDigits,
+        currentNip: form.currentNip,
+        newNip: form.newNip,
+      ),
+    );
+    if (!mounted) return;
     setState(() {
-      _shownProblem = problem;
-      if (problem == null) _keepChanges();
+      _isSaving = false;
+      switch (outcome) {
+        case ProfileSaved(:final profile):
+          _keepChanges(profile);
+        case ProfileRefused(:final message, :final field):
+          _refusal = message;
+          _refusedField = field;
+      }
     });
   }
 
-  FieldProblem<ProfileField>? _currentProblem() {
-    final form = ProfileForm(
+  ProfileForm _form() {
+    return ProfileForm(
       phone: _phoneController.text,
       currentNip: _currentNipController.text,
       newNip: _newNipController.text,
     );
-    return form.firstProblem(currentNipMatches: DemoClientAccess.hasNip(form.currentNip));
   }
 
-  // Until the API exists, nothing leaves the device: the card shows the new phone and the NIPs are wiped.
-  void _keepChanges() {
-    _savedPhone = _phoneController.text;
+  // The card shows the phone the workshop saved; the NIPs never stay on screen.
+  void _keepChanges(UserProfile saved) {
+    _savedPhone = saved.phone;
     _currentNipController.clear();
     _newNipController.clear();
     _wasSaved = true;
   }
 
-  void _signOut() {
+  Future<void> _signOut() async {
+    await ClientDataScope.of(context).signOut();
+    if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
   }
 }

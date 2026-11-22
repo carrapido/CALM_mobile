@@ -1,6 +1,12 @@
+import 'package:calm_mobil/models/catalog.dart';
+import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/screens/services_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fake_client_data.dart';
+
+const loadFailure = 'No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.';
 
 void main() {
   testWidgets('shows the catalog and the urgent extra', (tester) async {
@@ -74,11 +80,55 @@ void main() {
     expect(find.text('1 arreglo · urgente'), findsOneWidget);
     expect(find.text(r'$180 MXN + cargo por urgencia'), findsOneWidget);
   });
+
+  testWidgets('shows the services the workshop has active', (tester) async {
+    final data = FakeClientData(
+      catalogResult: const Catalog(
+        services: [ServiceItem(id: '12', title: 'Bordado a mano', priceMxn: 250)],
+      ),
+    );
+    await pumpServices(tester, data: data);
+
+    expect(find.text('Bordado a mano'), findsOneWidget);
+    expect(find.text(r'$250'), findsOneWidget);
+    expect(find.text('Ajuste de cintura'), findsNothing);
+  });
+
+  testWidgets('adds the urgent charge the workshop defined to the quote', (tester) async {
+    final data = FakeClientData(
+      catalogResult: Catalog(services: demoCatalog.services, urgentSurchargeMxn: 80),
+    );
+    await pumpServices(tester, data: data);
+
+    await tester.tap(find.text('Ajuste de cintura'));
+    await tester.tap(find.text('Prenda urgente'));
+    await tester.pump();
+
+    expect(find.text(r'$260 MXN'), findsOneWidget);
+  });
+
+  testWidgets('says when the catalog cannot load, and loads it again on Reintentar', (tester) async {
+    final data = FakeClientData()..fails = true;
+    await pumpServices(tester, data: data);
+
+    expect(find.text(loadFailure), findsOneWidget);
+    expect(find.text('Ajuste de cintura'), findsNothing);
+
+    data.fails = false;
+    await tester.tap(find.text('Reintentar'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text(loadFailure), findsNothing);
+    expect(find.text('Ajuste de cintura'), findsOneWidget);
+    expect(data.loads, 2);
+  });
 }
 
-Future<void> pumpServices(WidgetTester tester) async {
+Future<void> pumpServices(WidgetTester tester, {FakeClientData? data}) async {
   tester.view.physicalSize = const Size(390, 1200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(const MaterialApp(home: ServicesScreen()));
+  await tester.pumpWidget(withClientData(const MaterialApp(home: ServicesScreen()), data: data));
+  await tester.pump();
 }

@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
-import 'routes/app_routes.dart';
-import 'themes/app_theme.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'config/supabase_config.dart';
+import 'routes/app_routes.dart';
+import 'services/client_data.dart';
+import 'services/supabase_client_data.dart';
+import 'themes/app_theme.dart';
+import 'widgets/missing_config_screen.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (!SupabaseConfig.isComplete) {
+    runApp(const MissingConfigApp(message: SupabaseConfig.missingMessage));
+    return;
+  }
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    publishableKey: SupabaseConfig.publishableKey,
+  );
+  runApp(
+    ClientDataScope(
+      data: SupabaseClientData(Supabase.instance.client),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

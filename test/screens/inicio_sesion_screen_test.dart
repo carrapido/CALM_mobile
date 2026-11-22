@@ -1,13 +1,18 @@
 import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/inicio_sesion_screen.dart';
+import 'package:calm_mobil/services/client_access.dart';
 import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_client_access.dart';
 
 const ordersDestination = 'Pedidos destino';
 const servicesDestination = 'Servicios destino';
 const phoneMissingMessage = 'Escribe tu celular a 10 dígitos.';
 const mismatchMessage = 'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.';
+const throttledMessage = 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+const unavailableMessage = 'No pudimos conectarnos. Revisa tu internet e inténtalo de nuevo.';
 const helpTitle = '¿Te ayudamos?';
 
 final phoneField = find.byType(TextField).first;
@@ -91,7 +96,7 @@ void main() {
     expect(hasFocus(tester, nipField), isTrue);
   });
 
-  testWidgets('opens Pedidos with the right phone and NIP', (tester) async {
+  testWidgets('opens Pedidos when the backend grants access', (tester) async {
     await pumpEntrada(tester);
 
     await signIn(tester, phone: '9981234567', nip: '2580');
@@ -99,14 +104,60 @@ void main() {
     expect(find.text(ordersDestination), findsOneWidget);
   });
 
+  testWidgets('sends the phone digits and the NIP to the backend', (tester) async {
+    final access = FakeClientAccess();
+    await pumpEntrada(tester, access: access);
+
+    await signIn(tester, phone: '9981234567', nip: '2580');
+
+    expect(access.calls, [(phoneDigits: '9981234567', nip: '2580')]);
+  });
+
+  testWidgets('does not ask the backend while the form is incomplete', (tester) async {
+    final access = FakeClientAccess();
+    await pumpEntrada(tester, access: access);
+
+    await signIn(tester, phone: '998 123 4', nip: '25');
+
+    expect(access.calls, isEmpty);
+  });
+
   testWidgets('tells the client when the phone and NIP do not match', (tester) async {
-    await pumpEntrada(tester);
+    await pumpEntrada(tester, access: FakeClientAccess(outcome: const SignInRejected()));
 
     await signIn(tester, phone: '9981234567', nip: '1111');
 
     expect(find.text(mismatchMessage), findsOneWidget);
     expect(labelColor(tester, 'NIP'), AppColors.errorText);
     expect(find.text(ordersDestination), findsNothing);
+  });
+
+  testWidgets('tells the client when there were too many attempts', (tester) async {
+    await pumpEntrada(tester, access: FakeClientAccess(outcome: const SignInThrottled()));
+
+    await signIn(tester, phone: '9981234567', nip: '2580');
+
+    expect(find.text(throttledMessage), findsOneWidget);
+    expect(find.text(ordersDestination), findsNothing);
+  });
+
+  testWidgets('tells the client when the backend cannot be reached', (tester) async {
+    await pumpEntrada(tester, access: FakeClientAccess(outcome: const SignInUnavailable()));
+
+    await signIn(tester, phone: '9981234567', nip: '2580');
+
+    expect(find.text(unavailableMessage), findsOneWidget);
+    expect(find.text(ordersDestination), findsNothing);
+  });
+
+  testWidgets('hides a backend message as soon as a field changes', (tester) async {
+    await pumpEntrada(tester, access: FakeClientAccess(outcome: const SignInUnavailable()));
+    await signIn(tester, phone: '9981234567', nip: '2580');
+
+    await tester.enterText(nipField, '258');
+    await tester.pump();
+
+    expect(find.text(unavailableMessage), findsNothing);
   });
 
   testWidgets('opens the help sheet from "Olvidé mi NIP" and closes it with Listo', (tester) async {
@@ -146,11 +197,12 @@ void main() {
   });
 }
 
-Future<void> pumpEntrada(WidgetTester tester) async {
+Future<void> pumpEntrada(WidgetTester tester, {FakeClientAccess? access}) async {
+  final clientAccess = access ?? FakeClientAccess();
   await tester.pumpWidget(
     MaterialApp(
       routes: {
-        AppRoutes.initial: (_) => const InicioSesionScreen(),
+        AppRoutes.initial: (_) => InicioSesionScreen(access: clientAccess),
         AppRoutes.orders: (_) => const Text(ordersDestination),
         AppRoutes.services: (_) => const Text(servicesDestination),
       },

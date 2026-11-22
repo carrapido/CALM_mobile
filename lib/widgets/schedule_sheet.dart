@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/appointment_agenda.dart';
+import '../models/booking.dart';
 import '../models/booking_form.dart';
 import '../models/field_problem.dart';
 import '../models/login_form.dart';
 import '../models/order.dart';
 import '../models/service_selection.dart';
 import '../routes/app_routes.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
+import '../utils/app_constants.dart';
 import '../utils/telefono_formatter.dart';
 import 'action_button.dart';
 import 'form_alert.dart';
 import 'group_footnote.dart';
 import 'inset_group.dart';
 import 'labeled_field_row.dart';
+import 'loaded.dart';
 import 'section_header.dart';
 import 'sheet_parts.dart';
 
@@ -33,23 +37,53 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     sheetAnimationStyle: sheetMotion(context),
-    builder: (_) => ScheduleSheet(selection: selection),
+    builder: (sheetContext) => Loaded<AppointmentAgenda>(
+      load: ClientDataScope.of(sheetContext).agenda,
+      pending: (status) => Padding(padding: const EdgeInsets.all(16), child: status),
+      builder: (_, agenda) => agenda.firstBookableDay == null
+          ? const _NoFreeSlots()
+          : ScheduleSheet(selection: selection, agenda: agenda),
+    ),
   );
 }
 
+/// The month the agenda covers has no free slot left.
+class _NoFreeSlots extends StatelessWidget {
+  const _NoFreeSlots();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(24, 48, 24, 48),
+      child: Text(
+        'Ya no quedan horarios libres este mes. Escríbele al taller.',
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
 class ScheduleSheet extends StatefulWidget {
-  const ScheduleSheet({super.key, required this.selection});
+  const ScheduleSheet({super.key, required this.selection, required this.agenda});
 
   final ServiceSelection selection;
+
+  /// Has at least one free slot: [showScheduleSheet] says so instead of opening an empty agenda.
+  final AppointmentAgenda agenda;
 
   @override
   State<ScheduleSheet> createState() => _ScheduleSheetState();
 }
 
 class _ScheduleSheetState extends State<ScheduleSheet> {
-  static const _agenda = AppointmentAgenda.november2026;
-  // The API assigns the ticket; this is the panel's demo one.
-  static const _demoTicket = '0937';
+  // A slot someone takes meanwhile is marked booked here, so the client moves off it.
+  late AppointmentAgenda _agenda = widget.agenda;
+  String? _ticket;
+  bool _isBooking = false;
+
+  // The workshop's refusal, shown until the client edits something.
+  String? _refusal;
+  BookingField? _refusedField;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -58,8 +92,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   late final FixedExtentScrollController _minuteWheel;
   bool _isConfirmed = false;
   bool _showsProblem = false;
-  int _day = 5;
-  String _time = '11:00';
+  // Opens on the first free day after today, at the free time closest to 11:00.
+  late int _day = _agenda.firstBookableDay!;
+  late String _time = _agenda.nearestSlot(_day, '11:00');
 
   @override
   void initState() {
@@ -104,7 +139,7 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   String get _summary => '${_agenda.shortDayLabel(_day)}, $_time';
 
   List<Widget> _choices() {
-    final problem = _showsProblem ? _currentProblem()?.field : null;
+    final problem = _refusedField ?? (_showsProblem ? _currentProblem()?.field : null);
     return [
       _SelectionCard(selection: widget.selection),
       const SectionHeader('Día', topSpacing: 20),
@@ -218,30 +253,81 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   }
 
   void _hideProblem() {
-    if (_showsProblem) setState(() => _showsProblem = false);
+    if (!_showsProblem && _refusal == null) return;
+    setState(() {
+      _showsProblem = false;
+      _refusal = null;
+      _refusedField = null;
+    });
   }
 
   List<Widget> _choosingActions() {
-    final problem = _showsProblem ? _currentProblem() : null;
+    final message = _refusal ?? (_showsProblem ? _currentProblem()?.message : null);
     return [
-      if (problem != null) FormAlert(problem.message),
+      if (message != null) FormAlert(message),
       ActionButton.primary(label: 'Confirmar · $_summary', onPressed: _confirm),
     ];
   }
 
-  void _confirm() {
+  /// The form's own rules first; only complete data is worth a trip to the workshop.
+  Future<void> _confirm() async {
+    if (_isBooking) return;
     if (_currentProblem() != null) {
       setState(() => _showsProblem = true);
       return;
     }
-    setState(() => _isConfirmed = true);
+
+    setState(() => _isBooking = true);
+    final outcome = await ClientDataScope.of(context).book(_bookingRequest());
+    if (!mounted) return;
+    setState(() {
+      _isBooking = false;
+      _answer(outcome);
+    });
+  }
+
+  BookingRequest _bookingRequest() {
+    return BookingRequest(
+      name: _nameController.text.trim(),
+      phoneDigits: digitsOf(_phoneController.text),
+      nip: _nipController.text,
+      selection: widget.selection,
+      date: _agenda.isoDate(_day),
+      time: _time,
+    );
+  }
+
+  void _answer(BookingOutcome outcome) {
+    switch (outcome) {
+      case BookingConfirmed(:final ticket):
+        _ticket = ticket;
+        _isConfirmed = true;
+      case BookingSlotTaken():
+        _agenda = _agenda.withBooked(_day, _time);
+        _moveOffTakenSlot();
+        _refusal = AppConstants.bookingSlotTaken;
+      case BookingRefused(:final message, :final field):
+        _refusal = message;
+        _refusedField = field;
+    }
+  }
+
+  /// To the free time closest to the taken one, on another day when that one is now full.
+  void _moveOffTakenSlot() {
+    if (!_agenda.isAvailable(_day)) {
+      final day = _agenda.firstBookableDay;
+      if (day == null) return;
+      _day = day;
+    }
+    _time = _agenda.nearestSlot(_day, _time);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollWheelsTo(_time));
   }
 
   List<Widget> _confirmation() {
     return [
       _ConfirmationHeading(details: '$_summary · ${widget.selection.names}'),
       const SizedBox(height: 16),
-      const _TicketCard(ticket: _demoTicket),
+      _TicketCard(ticket: _ticket!),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         child: Text(
@@ -259,7 +345,7 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
 
   void _openAppointment() {
     final appointment = Order(
-      ticket: _demoTicket,
+      ticket: _ticket!,
       work: widget.selection.names,
       status: OrderStatus.appointment,
       amountMxn: widget.selection.totalMxn,
