@@ -12,6 +12,8 @@ class ProfileForm {
   final String currentNip;
   final String newNip;
 
+  String get phoneDigits => digitsOf(phone);
+
   bool get changesNip => currentNip.isNotEmpty || newNip.isNotEmpty;
 
   /// One problem at a time, in the order of the fields; null when ready to save.

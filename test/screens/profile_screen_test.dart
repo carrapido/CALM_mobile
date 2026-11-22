@@ -2,6 +2,8 @@ import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/profile_screen.dart';
 import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:calm_mobil/models/profile_form.dart';
+import 'package:calm_mobil/models/profile_update.dart';
 import 'package:calm_mobil/models/user_profile.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,7 +58,7 @@ void main() {
 
     await tester.enterText(phoneField, '9987654321');
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Guardamos tus cambios'), findsOneWidget);
     expect(find.text('Guardar cambios'), findsNothing);
@@ -67,7 +69,7 @@ void main() {
   testWidgets('brings the button back on the next edit', (tester) async {
     await pumpProfile(tester);
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.enterText(phoneField, '998123456');
     await tester.pump();
@@ -81,7 +83,7 @@ void main() {
 
     await tester.enterText(phoneField, '99812');
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Escribe tu celular a 10 dígitos.'), findsOneWidget);
     expect(labelColor(tester, 'Número'), AppColors.errorText);
@@ -92,7 +94,7 @@ void main() {
     await pumpProfile(tester);
     await tester.enterText(phoneField, '99812');
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.enterText(phoneField, '998123');
     await tester.pump();
@@ -101,13 +103,16 @@ void main() {
     expect(labelColor(tester, 'Número'), AppColors.ink);
   });
 
-  testWidgets('rejects a current NIP that does not match', (tester) async {
-    await pumpProfile(tester);
+  testWidgets('rejects a current NIP the workshop does not match', (tester) async {
+    final data = FakeClientData(
+      profileSaveResult: const ProfileRefused('Tu NIP actual no coincide.', field: ProfileField.currentNip),
+    );
+    await pumpProfile(tester, data: data);
 
     await tester.enterText(currentNipField, '1111');
     await tester.enterText(newNipField, '1357');
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Tu NIP actual no coincide.'), findsOneWidget);
     expect(labelColor(tester, 'Actual'), AppColors.errorText);
@@ -119,11 +124,64 @@ void main() {
     await tester.enterText(currentNipField, '2580');
     await tester.enterText(newNipField, '1357');
     await tester.tap(find.text('Guardar cambios'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Guardamos tus cambios'), findsOneWidget);
     expect(find.text('2580'), findsNothing);
     expect(find.text('1357'), findsNothing);
+  });
+
+  testWidgets('sends the phone and both NIPs to the workshop', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9987654321');
+    await tester.enterText(currentNipField, '2580');
+    await tester.enterText(newNipField, '1357');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    final change = data.profileChanges.single;
+    expect(change.phoneDigits, '9987654321');
+    expect(change.currentNip, '2580');
+    expect(change.newNip, '1357');
+  });
+
+  testWidgets('sends nothing while the form has a problem', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '99812');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(data.profileChanges, isEmpty);
+  });
+
+  testWidgets('says when the workshop refuses the new phone', (tester) async {
+    final data = FakeClientData(
+      profileSaveResult: const ProfileRefused('Ese celular ya lo usa otra cuenta.', field: ProfileField.phone),
+    );
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9981234567');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ese celular ya lo usa otra cuenta.'), findsOneWidget);
+    expect(labelColor(tester, 'Número'), AppColors.errorText);
+    expect(find.text('Guardamos tus cambios'), findsNothing);
+  });
+
+  testWidgets('ends the session when signing out', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.ensureVisible(find.text('Cerrar sesión'));
+    await tester.tap(find.text('Cerrar sesión'));
+    await tester.pumpAndSettle();
+
+    expect(data.signOuts, 1);
   });
 
   testWidgets('signs out to Entrada, leaving nothing to go back to', (tester) async {

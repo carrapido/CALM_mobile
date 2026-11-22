@@ -3,6 +3,7 @@ import 'package:calm_mobil/models/booking.dart';
 import 'package:calm_mobil/models/catalog.dart';
 import 'package:calm_mobil/models/client_action.dart';
 import 'package:calm_mobil/models/order.dart';
+import 'package:calm_mobil/models/profile_update.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/user_profile.dart';
 import 'package:calm_mobil/services/client_data.dart';
@@ -83,6 +84,7 @@ class FakeClientData implements ClientData {
     this.agendaResult = demoAgenda,
     this.bookingResult = const BookingConfirmed('0937'),
     this.actionResult = const ActionDone(),
+    this.profileSaveResult,
   });
 
   Catalog catalogResult;
@@ -94,6 +96,11 @@ class FakeClientData implements ClientData {
   ClientActionOutcome actionResult;
   final cancelledTickets = <String>[];
   final onTheWayTickets = <String>[];
+
+  /// Null answers as the workshop does when it saves: her profile with the phone she sent.
+  ProfileUpdateOutcome? profileSaveResult;
+  final profileChanges = <ProfileChange>[];
+  int signOuts = 0;
   bool fails = false;
   int loads = 0;
 
@@ -126,6 +133,16 @@ class FakeClientData implements ClientData {
     onTheWayTickets.add(ticket);
     return actionResult;
   }
+
+  @override
+  Future<ProfileUpdateOutcome> saveProfile(ProfileChange change) async {
+    profileChanges.add(change);
+    return profileSaveResult ??
+        ProfileSaved(UserProfile.fromRow({'name': profileResult.fullName, 'phone': change.phoneDigits}));
+  }
+
+  @override
+  Future<void> signOut() async => signOuts++;
 
   Future<T> _answer<T>(T result) async {
     loads++;

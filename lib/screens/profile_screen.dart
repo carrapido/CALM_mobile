@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/demo_client_access.dart';
 import '../models/field_problem.dart';
 import '../models/login_form.dart';
 import '../models/profile_form.dart';
+import '../models/profile_update.dart';
 import '../models/user_profile.dart';
 import '../routes/app_routes.dart';
 import '../services/client_data.dart';
@@ -58,6 +58,11 @@ class _ProfileViewState extends State<_ProfileView> {
   late String _savedPhone = widget.profile.phone;
   FieldProblem<ProfileField>? _shownProblem;
   bool _wasSaved = false;
+  bool _isSaving = false;
+
+  // The workshop's refusal; it may name no field, which a FieldProblem cannot express.
+  String? _refusal;
+  ProfileField? _refusedField;
 
   @override
   void dispose() {
@@ -69,7 +74,7 @@ class _ProfileViewState extends State<_ProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    final invalidField = _shownProblem?.field;
+    final invalidField = _refusedField ?? _shownProblem?.field;
     return TabPage(
       tab: AppTab.profile,
       children: [
@@ -126,20 +131,22 @@ class _ProfileViewState extends State<_ProfileView> {
 
   // Any edit takes back both the message and "Guardamos tus cambios": they describe the last save.
   void _onEdited(String _) {
-    if (_shownProblem == null && !_wasSaved) return;
+    if (_shownProblem == null && !_wasSaved && _refusal == null) return;
     setState(() {
       _shownProblem = null;
       _wasSaved = false;
+      _refusal = null;
+      _refusedField = null;
     });
   }
 
   Widget _saveArea() {
-    final problem = _shownProblem;
+    final message = _refusal ?? _shownProblem?.message;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
       children: [
-        if (problem != null) FormAlert(problem.message),
+        if (message != null) FormAlert(message),
         if (_wasSaved)
           const StatusNote('Guardamos tus cambios')
         else
@@ -148,32 +155,56 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  void _save() {
-    final problem = _currentProblem();
+  /// The form's own rules first; whether the current NIP is right is the workshop's call.
+  Future<void> _save() async {
+    if (_isSaving) return;
+    final form = _form();
+    final problem = form.firstProblem(currentNipMatches: true);
+    if (problem != null) {
+      setState(() => _shownProblem = problem);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final outcome = await ClientDataScope.of(context).saveProfile(
+      ProfileChange(
+        phoneDigits: form.phoneDigits,
+        currentNip: form.currentNip,
+        newNip: form.newNip,
+      ),
+    );
+    if (!mounted) return;
     setState(() {
-      _shownProblem = problem;
-      if (problem == null) _keepChanges();
+      _isSaving = false;
+      switch (outcome) {
+        case ProfileSaved(:final profile):
+          _keepChanges(profile);
+        case ProfileRefused(:final message, :final field):
+          _refusal = message;
+          _refusedField = field;
+      }
     });
   }
 
-  FieldProblem<ProfileField>? _currentProblem() {
-    final form = ProfileForm(
+  ProfileForm _form() {
+    return ProfileForm(
       phone: _phoneController.text,
       currentNip: _currentNipController.text,
       newNip: _newNipController.text,
     );
-    return form.firstProblem(currentNipMatches: DemoClientAccess.hasNip(form.currentNip));
   }
 
-  // Until the API exists, nothing leaves the device: the card shows the new phone and the NIPs are wiped.
-  void _keepChanges() {
-    _savedPhone = _phoneController.text;
+  // The card shows the phone the workshop saved; the NIPs never stay on screen.
+  void _keepChanges(UserProfile saved) {
+    _savedPhone = saved.phone;
     _currentNipController.clear();
     _newNipController.clear();
     _wasSaved = true;
   }
 
-  void _signOut() {
+  Future<void> _signOut() async {
+    await ClientDataScope.of(context).signOut();
+    if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
   }
 }

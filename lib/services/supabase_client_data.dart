@@ -6,6 +6,8 @@ import '../models/booking_form.dart';
 import '../models/catalog.dart';
 import '../models/client_action.dart';
 import '../models/order.dart';
+import '../models/profile_form.dart';
+import '../models/profile_update.dart';
 import '../models/user_profile.dart';
 import '../utils/app_constants.dart';
 import '../utils/spanish_dates.dart';
@@ -104,6 +106,47 @@ class SupabaseClientData implements ClientData {
       return ActionRefused(failure.code == 'P0001' ? refusal : AppConstants.signInUnavailable);
     } catch (_) {
       return const ActionRefused(AppConstants.signInUnavailable);
+    }
+  }
+
+  /// `client-update-profile` checks the current NIP; the session says who she is.
+  @override
+  Future<ProfileUpdateOutcome> saveProfile(ProfileChange change) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'client-update-profile',
+        body: {'phone': change.phoneDigits, 'current_nip': change.currentNip, 'new_nip': change.newNip},
+      );
+      final client = (response.data as Map<String, dynamic>)['client'] as Map<String, dynamic>;
+      return ProfileSaved(UserProfile.fromRow(client));
+    } on FunctionException catch (failure) {
+      return _profileRefusalFor(failure.status, failure.details);
+    } catch (_) {
+      return const ProfileRefused(AppConstants.signInUnavailable);
+    }
+  }
+
+  /// The refusals carry the wording of Perfil's own form; the code says which field it is about.
+  static ProfileUpdateOutcome _profileRefusalFor(int status, dynamic details) {
+    final body = details is Map ? details : const {};
+    final message = body['error'] as String? ?? AppConstants.signInUnavailable;
+    return switch ((status, body['code'])) {
+      (429, _) => const ProfileRefused(AppConstants.signInThrottled),
+      (_, 'phone' || 'phone_taken') => ProfileRefused(message, field: ProfileField.phone),
+      (_, 'current_nip') => ProfileRefused(message, field: ProfileField.currentNip),
+      (_, 'new_nip') => ProfileRefused(message, field: ProfileField.newNip),
+      (_, 'signed_out') => ProfileRefused(message),
+      _ => const ProfileRefused(AppConstants.signInUnavailable),
+    };
+  }
+
+  /// Even when the server cannot be reached, the session on this device is gone.
+  @override
+  Future<void> signOut() async {
+    try {
+      await _supabase.auth.signOut();
+    } catch (_) {
+      // signOut clears the local session before it calls the server.
     }
   }
 

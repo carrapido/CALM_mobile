@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 ---
 
 # Client actions write to Supabase (batch 3)
@@ -56,7 +56,9 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
       marked booked in the sheet, which moves to the nearest free time.
 - [x] **T4 commit** — `4831219`.
 - [x] **T5** (S6, S7, S11) — App: cancel and "Voy en camino" on the server.
-- [ ] **T6** (S8, S9) — App: Perfil saves on the server; "Cerrar sesión" ends the session.
+- [x] **T5 commit** — `b0bc269`.
+- [x] **T6** (S8, S9) — App: Perfil saves on the server; "Cerrar sesión" ends the session.
+      `DemoClientAccess`, the last demo stand-in, is gone.
 
 ## Log
 
@@ -90,6 +92,12 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
   `done` and then refused with `PostgrestException` code `P0001`; María cancelling an appointment
   booked for the 30th `done` and then refused with `P0001`. Order 5512 was restored to
   `inProgress`; the appointment count is back to 4.
+- **L9** — Evidence for T6 with Juan's account, nothing changed: the app's exact
+  `functions.invoke('client-update-profile')` carries the session by itself (200 with his row);
+  a wrong current NIP 401 `current_nip`, a phone in use 409 `phone_taken`; after
+  `auth.signOut()` there is no session and the function answers 401 `signed_out`. `gotrue` 2.27.3
+  removes the local session before calling the server (`gotrue_client.dart:1088-1101`), so
+  signing out holds even offline. The failed attempt the test left was cleared.
 - **L3** — Review: the open lineage `review-fc190b36772165fa` failed a third time with "no model is
   configured for review-risk"; the routing file is not readable by the agent. Per-role models are
   set in `/gentle:profiles`.

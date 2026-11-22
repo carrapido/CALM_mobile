@@ -5,6 +5,7 @@ import '../models/booking.dart';
 import '../models/catalog.dart';
 import '../models/client_action.dart';
 import '../models/order.dart';
+import '../models/profile_update.dart';
 import '../models/user_profile.dart';
 
 /// What the client's screens read from the workshop and ask it to do, without knowing where it
@@ -33,6 +34,12 @@ abstract interface class ClientData {
 
   /// Tells the workshop she is on her way to pick up her ready order [ticket].
   Future<ClientActionOutcome> markOnMyWay(String ticket);
+
+  /// Saves Perfil: the phone she signs in with and, when she asks, a new NIP.
+  Future<ProfileUpdateOutcome> saveProfile(ProfileChange change);
+
+  /// Ends her session on this device.
+  Future<void> signOut();
 }
 
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.
