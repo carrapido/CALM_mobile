@@ -35,6 +35,11 @@ client action keeps its current local behavior until batch 3.
   it cannot load it says "No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo."
   with a "Reintentar" button. Pedidos with nothing at all says "Todavía no tienes pedidos.", and
   a section with nothing in it is not shown.
+- **S9** — Derived: where "Agendar cita" opens. The design's board reads "Confirmar · Jue 5,
+  11:00" on the demo agenda whose today is the 4th: the first free day after today, at the free
+  time closest to 11:00. That rule is kept, with today only when no later day of the month is
+  free. A month with no free slot left says "Ya no quedan horarios libres este mes. Escríbele al
+  taller." instead of opening an empty agenda.
 - **S8** — No secret in either repository (from batch 1: "no dejes ningun secreto en el repo").
 
 ## Tasks
@@ -48,7 +53,8 @@ client action keeps its current local behavior until batch 3.
       own: it shows the order Pedidos hands it.
 - [x] **T4 commit** — `f98a6fc`.
 - [x] **T5** (S4, S7) — Perfil from the database.
-- [ ] **T6** (S5, S7) — The agenda of "Agendar cita" from the database.
+- [x] **T5 commit** — `8a3e79b`.
+- [x] **T6** (S5, S7, S9) — The agenda of "Agendar cita" from the database.
 
 ## Log
 
@@ -79,6 +85,12 @@ client action keeps its current local behavior until batch 3.
   row), which Perfil shows as the load failure. Open for batch 3: "Cerrar sesión" only returns to
   Entrada and leaves the Supabase session on the device; ending it is an auth action outside this
   read-only batch.
+- **L8** — Evidence for T6: `booking_calendar` called without a session answered today
+  2026-11-22, now 17:54, blocked 2026-11-25, nothing booked; `AppointmentAgenda.fromCalendar` on
+  that answer gives "Noviembre 2026", first bookable day 23, no slot today (Sunday, closed), 16
+  slots 10:00–17:30 on Monday 23 and 30, none on the blocked 25th or Sunday 29.
+  Open for later: the agenda covers the current month only, as the design's month calendar does,
+  so late in a month few days remain bookable.
 - **L4** — Routing: every `gentle-ai-explore` run this session failed with an auth error (five
   runs), as did `gentle-ai-verify`; the native review relay reports no model for `review-risk`.
   Exploration and implementation run inline.

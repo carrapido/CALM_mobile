@@ -9,6 +9,7 @@ import '../models/login_form.dart';
 import '../models/order.dart';
 import '../models/service_selection.dart';
 import '../routes/app_routes.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/telefono_formatter.dart';
@@ -17,6 +18,7 @@ import 'form_alert.dart';
 import 'group_footnote.dart';
 import 'inset_group.dart';
 import 'labeled_field_row.dart';
+import 'loaded.dart';
 import 'section_header.dart';
 import 'sheet_parts.dart';
 
@@ -33,21 +35,46 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     sheetAnimationStyle: sheetMotion(context),
-    builder: (_) => ScheduleSheet(selection: selection),
+    builder: (sheetContext) => Loaded<AppointmentAgenda>(
+      load: ClientDataScope.of(sheetContext).agenda,
+      pending: (status) => Padding(padding: const EdgeInsets.all(16), child: status),
+      builder: (_, agenda) => agenda.firstBookableDay == null
+          ? const _NoFreeSlots()
+          : ScheduleSheet(selection: selection, agenda: agenda),
+    ),
   );
 }
 
+/// The month the agenda covers has no free slot left.
+class _NoFreeSlots extends StatelessWidget {
+  const _NoFreeSlots();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(24, 48, 24, 48),
+      child: Text(
+        'Ya no quedan horarios libres este mes. Escríbele al taller.',
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
 class ScheduleSheet extends StatefulWidget {
-  const ScheduleSheet({super.key, required this.selection});
+  const ScheduleSheet({super.key, required this.selection, required this.agenda});
 
   final ServiceSelection selection;
+
+  /// Has at least one free slot: [showScheduleSheet] says so instead of opening an empty agenda.
+  final AppointmentAgenda agenda;
 
   @override
   State<ScheduleSheet> createState() => _ScheduleSheetState();
 }
 
 class _ScheduleSheetState extends State<ScheduleSheet> {
-  static const _agenda = AppointmentAgenda.november2026;
+  AppointmentAgenda get _agenda => widget.agenda;
   // The API assigns the ticket; this is the panel's demo one.
   static const _demoTicket = '0937';
 
@@ -58,8 +85,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   late final FixedExtentScrollController _minuteWheel;
   bool _isConfirmed = false;
   bool _showsProblem = false;
-  int _day = 5;
-  String _time = '11:00';
+  // Opens on the first free day after today, at the free time closest to 11:00.
+  late int _day = _agenda.firstBookableDay!;
+  late String _time = _agenda.nearestSlot(_day, '11:00');
 
   @override
   void initState() {

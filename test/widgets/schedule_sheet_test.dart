@@ -1,3 +1,4 @@
+import 'package:calm_mobil/models/appointment_agenda.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/service_selection.dart';
@@ -5,6 +6,8 @@ import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/widgets/schedule_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/fake_client_data.dart';
 
 const waistSelection = ServiceSelection(
   services: [ServiceItem(id: 'waist', title: 'Ajuste de cintura', priceMxn: 180)],
@@ -108,13 +111,40 @@ void main() {
 
     expect(find.text('Agendar cita'), findsNothing);
   });
+
+  testWidgets('says when the month has no free slot left', (tester) async {
+    const full = AppointmentAgenda(
+      monthName: 'Noviembre 2026',
+      monthLongName: 'noviembre',
+      daysInMonth: 30,
+      firstWeekday: 7,
+      today: 30,
+      nowTime: '18:00',
+      slotsByWeekday: {1: ['10:00', '17:30']},
+      blockedDays: {},
+      bookedSlots: {},
+    );
+    await openSheet(tester, data: FakeClientData(agendaResult: full));
+
+    expect(find.text('Ya no quedan horarios libres este mes. Escríbele al taller.'), findsOneWidget);
+    expect(find.textContaining('Confirmar'), findsNothing);
+  });
+
+  testWidgets('says when the agenda cannot load', (tester) async {
+    await openSheet(tester, data: FakeClientData()..fails = true);
+
+    expect(
+      find.text('No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.'),
+      findsOneWidget,
+    );
+  });
 }
 
-Future<void> openSheet(WidgetTester tester) async {
+Future<void> openSheet(WidgetTester tester, {FakeClientData? data}) async {
   tester.view.physicalSize = const Size(390, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(
+  await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       routes: {
         AppRoutes.initial: (context) => Scaffold(
@@ -129,7 +159,7 @@ Future<void> openSheet(WidgetTester tester) async {
         },
       },
     ),
-  );
+  ));
   await tester.tap(find.text('abrir hoja'));
   await tester.pumpAndSettle();
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../models/appointment_agenda.dart';
 import '../models/catalog.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
@@ -16,6 +17,9 @@ abstract interface class ClientData {
 
   /// The signed-in client herself.
   Future<UserProfile> profile();
+
+  /// This month's free slots, with or without a session; never who booked the others.
+  Future<AppointmentAgenda> agenda();
 }
 
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.
