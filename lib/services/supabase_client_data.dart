@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/catalog.dart';
 import '../models/order.dart';
+import '../models/user_profile.dart';
 import '../utils/spanish_dates.dart';
 import 'client_data.dart';
 
@@ -33,5 +34,12 @@ class SupabaseClientData implements ClientData {
       ),
     ]);
     return Order.listFrom(orderRows: orderRows, appointmentRows: appointmentRows, now: cancunNow());
+  }
+
+  /// Row level security lets a client read only her own row of `clients`.
+  @override
+  Future<UserProfile> profile() async {
+    final row = await _supabase.from('clients').select('name, phone').single();
+    return UserProfile.fromRow(row);
   }
 }

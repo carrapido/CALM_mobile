@@ -1,6 +1,7 @@
 import 'package:calm_mobil/models/catalog.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
+import 'package:calm_mobil/models/user_profile.dart';
 import 'package:calm_mobil/services/client_data.dart';
 import 'package:flutter/widgets.dart';
 
@@ -36,12 +37,20 @@ const demoOrders = [
   ),
 ];
 
+/// The panel's sample client, owner of ticket 7720.
+const demoProfile = UserProfile(fullName: 'Carlos Ruiz', phone: '998 123 4567');
+
 /// Stands in for the database in screen tests. Set [fails] to make every load throw.
 class FakeClientData implements ClientData {
-  FakeClientData({this.catalogResult = demoCatalog, this.ordersResult = demoOrders});
+  FakeClientData({
+    this.catalogResult = demoCatalog,
+    this.ordersResult = demoOrders,
+    this.profileResult = demoProfile,
+  });
 
   Catalog catalogResult;
   List<Order> ordersResult;
+  UserProfile profileResult;
   bool fails = false;
   int loads = 0;
 
@@ -50,6 +59,9 @@ class FakeClientData implements ClientData {
 
   @override
   Future<List<Order>> orders() => _answer(ordersResult);
+
+  @override
+  Future<UserProfile> profile() => _answer(profileResult);
 
   Future<T> _answer<T>(T result) async {
     loads++;

@@ -2,9 +2,33 @@ import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/profile_screen.dart';
 import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:calm_mobil/models/user_profile.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_client_data.dart';
+
 void main() {
+  testWidgets('shows the signed-in client', (tester) async {
+    final data = FakeClientData(
+      profileResult: const UserProfile(fullName: 'María López', phone: '998 123 4567'),
+    );
+    await pumpProfile(tester, data: data);
+
+    expect(find.text('María López'), findsOneWidget);
+    expect(find.text('ML'), findsOneWidget);
+    expect(find.text('Carlos Ruiz'), findsNothing);
+  });
+
+  testWidgets('says when the profile cannot load', (tester) async {
+    await pumpProfile(tester, data: FakeClientData()..fails = true);
+
+    expect(
+      find.text('No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.'),
+      findsOneWidget,
+    );
+    expect(find.text('Cerrar sesión'), findsNothing);
+  });
+
   testWidgets('shows the client and the editable data', (tester) async {
     await pumpProfile(tester);
 
@@ -120,11 +144,11 @@ final newNipField = find.byType(TextField).at(2);
 
 Color? labelColor(WidgetTester tester, String label) => tester.widget<Text>(find.text(label)).style?.color;
 
-Future<void> pumpProfile(WidgetTester tester) async {
+Future<void> pumpProfile(WidgetTester tester, {FakeClientData? data}) async {
   tester.view.physicalSize = const Size(390, 1400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(
+  await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       initialRoute: AppRoutes.profile,
       routes: {
@@ -132,5 +156,6 @@ Future<void> pumpProfile(WidgetTester tester) async {
         AppRoutes.profile: (_) => const ProfileScreen(),
       },
     ),
-  );
+  ));
+  await tester.pump();
 }

@@ -33,17 +33,21 @@ client action keeps its current local behavior until batch 3.
   by date, then in progress, then received) and "Entregados" the most recent first.
 - **S7** — Derived: loading and failure states. While data loads the screen shows a spinner; when
   it cannot load it says "No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo."
-  with a "Reintentar" button.
+  with a "Reintentar" button. Pedidos with nothing at all says "Todavía no tienes pedidos.", and
+  a section with nothing in it is not shown.
 - **S8** — No secret in either repository (from batch 1: "no dejes ningun secreto en el repo").
 
 ## Tasks
 
-- [ ] **T1** (S8) — CALM_web: branch `feat/acceso-cliente-app`, commit batch 1's backend files.
-- [ ] **T2** (S2, S3, S5) — Migration: client read policies and the `booking_calendar` function;
-      applied and checked with a client session and without one.
-- [ ] **T3** (S3, S7) — Servicios from the database.
-- [ ] **T4** (S2, S6, S7) — Pedidos and Pedido from the database.
-- [ ] **T5** (S4, S7) — Perfil from the database.
+- [x] **T1** (S8) — CALM_web: branch `feat/acceso-cliente-app`, commit batch 1's backend files.
+      CALM_web `1139c01`.
+- [x] **T2** (S2, S3, S5) — Migration: client read policies and the `booking_calendar` function;
+      applied and checked with a client session and without one. CALM_web `0b07065`.
+- [x] **T3** (S3, S7) — Servicios from the database. `92907d5`.
+- [x] **T4** (S2, S6, S7) — Pedidos and Pedido from the database. Pedido needs no load of its
+      own: it shows the order Pedidos hands it.
+- [x] **T4 commit** — `f98a6fc`.
+- [x] **T5** (S4, S7) — Perfil from the database.
 - [ ] **T6** (S5, S7) — The agenda of "Agendar cita" from the database.
 
 ## Log
@@ -59,6 +63,22 @@ client action keeps its current local behavior until batch 3.
   (CALM_web `src/agenda/infrastructure/supabase-agenda-repository.ts:20`), so narrowing column
   privileges for clients would break the admin panel. The agenda reaches clients through a
   `security definer` function instead, and no table grant changes.
+- **L5** — Evidence for T2, against the live project. With María's session (client 2):
+  `appointments` returns only her `4821`, `orders` returns nothing (all four belong to others),
+  `appointment_services` only her two, `services` the seven active ones, `clients` only her row.
+  Without a session: no order, appointment or link, the seven active services, `weekly_schedule`
+  empty, and `booking_calendar` answering. Advisors: two intended WARNs that anon and
+  authenticated execute `booking_calendar` (see L3), nothing else new.
+- **L6** — Evidence for T4: the exact queries of `SupabaseClientData.orders()` with María's
+  session return her appointment with `"orders": null`, the shape PostgREST gives a one-to-one
+  embed; `Order.listFrom` drops it because it was on the 17th, so she sees "Todavía no tienes
+  pedidos."; the same row moved to today maps to "Dobladillo de pantalón, Cambio de cierre",
+  "$250 MXN", "domingo 22 a las 23:30", not cancellable.
+- **L7** — Evidence for T5: with María's session `clients.select('name, phone').single()`
+  returns `{name: María López, phone: 9981234567}`; after `signOut` it raises `PGRST116` (no
+  row), which Perfil shows as the load failure. Open for batch 3: "Cerrar sesión" only returns to
+  Entrada and leaves the Supabase session on the device; ending it is an auth action outside this
+  read-only batch.
 - **L4** — Routing: every `gentle-ai-explore` run this session failed with an auth error (five
   runs), as did `gentle-ai-verify`; the native review relay reports no model for `review-risk`.
   Exploration and implementation run inline.

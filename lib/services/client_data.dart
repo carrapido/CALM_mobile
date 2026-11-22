@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../models/catalog.dart';
 import '../models/order.dart';
+import '../models/user_profile.dart';
 
 /// What the client's screens read from the workshop, without knowing where it comes from.
 ///
@@ -12,6 +13,9 @@ abstract interface class ClientData {
 
   /// Her orders and her appointments that have no order yet, in the order Pedidos lists them.
   Future<List<Order>> orders();
+
+  /// The signed-in client herself.
+  Future<UserProfile> profile();
 }
 
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.

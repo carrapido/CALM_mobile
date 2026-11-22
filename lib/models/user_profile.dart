@@ -1,9 +1,16 @@
+import '../utils/telefono_formatter.dart';
+
 /// The signed-in client, as Perfil shows them.
 class UserProfile {
   const UserProfile({required this.fullName, required this.phone});
 
-  /// The panel's sample client, owner of ticket 7720.
-  static const UserProfile mock = UserProfile(fullName: 'Carlos Ruiz', phone: '998 123 4567');
+  /// Her row of `clients`; the phone arrives as 10 digits and reads grouped, "998 123 4567".
+  factory UserProfile.fromRow(Map<String, dynamic> row) {
+    return UserProfile(
+      fullName: row['name'] as String,
+      phone: groupedPhone(row['phone'] as String? ?? ''),
+    );
+  }
 
   final String fullName;
   final String phone;
