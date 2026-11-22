@@ -5,7 +5,37 @@ import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_client_data.dart';
+
 void main() {
+  testWidgets('says when the client has no orders yet', (tester) async {
+    await pumpOrders(tester, data: FakeClientData(ordersResult: const []));
+
+    expect(find.text('Todavía no tienes pedidos.'), findsOneWidget);
+    expect(find.text('Activos'), findsNothing);
+    expect(find.text('Entregados'), findsNothing);
+    expect(find.text('Agendar una cita'), findsOneWidget);
+  });
+
+  testWidgets('hides a section with nothing in it', (tester) async {
+    final activeOnly = demoOrders.where((order) => !order.isDelivered).toList();
+    await pumpOrders(tester, data: FakeClientData(ordersResult: activeOnly));
+
+    expect(find.text('Activos'), findsOneWidget);
+    expect(find.text('Entregados'), findsNothing);
+  });
+
+  testWidgets('says when the orders cannot load', (tester) async {
+    await pumpOrders(tester, data: FakeClientData()..fails = true);
+
+    expect(
+      find.text('No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.'),
+      findsOneWidget,
+    );
+    // The heading and the tab bar stay while the orders cannot load.
+    expect(find.text('Pedidos'), findsNWidgets(2));
+  });
+
   testWidgets('lists active and delivered orders as in the design', (tester) async {
     await pumpOrders(tester);
 
@@ -67,8 +97,8 @@ void main() {
   });
 }
 
-Future<void> pumpOrders(WidgetTester tester) async {
-  await tester.pumpWidget(
+Future<void> pumpOrders(WidgetTester tester, {FakeClientData? data}) async {
+  await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       routes: {
         AppRoutes.initial: (_) => const OrdersScreen(),
@@ -79,5 +109,6 @@ Future<void> pumpOrders(WidgetTester tester) async {
         },
       },
     ),
-  );
+  ));
+  await tester.pump();
 }

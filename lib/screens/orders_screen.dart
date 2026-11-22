@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../models/order.dart';
 import '../routes/app_routes.dart';
+import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../widgets/action_button.dart';
 import '../widgets/app_tab_bar.dart';
+import '../widgets/group_footnote.dart';
 import '../widgets/inset_group.dart';
+import '../widgets/loaded.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/section_header.dart';
 import '../widgets/tab_page.dart';
@@ -15,28 +18,51 @@ import '../widgets/tab_page.dart';
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
 
+  static const _heading = PageHeading('Pedidos');
+
   @override
   Widget build(BuildContext context) {
-    final activeOrders = Order.demoOrders.where((order) => !order.isDelivered);
-    final deliveredOrders = Order.demoOrders.where((order) => order.isDelivered);
+    return Loaded<List<Order>>(
+      load: ClientDataScope.of(context).orders,
+      pending: (status) => TabPage(tab: AppTab.orders, children: [_heading, status]),
+      builder: (_, orders) => _OrdersView(orders),
+    );
+  }
+}
+
+/// A section with nothing in it is not shown; with nothing at all, Pedidos says so.
+class _OrdersView extends StatelessWidget {
+  const _OrdersView(this.orders);
+
+  final List<Order> orders;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeOrders = orders.where((order) => !order.isDelivered).toList();
+    final deliveredOrders = orders.where((order) => order.isDelivered).toList();
     return TabPage(
       tab: AppTab.orders,
       children: [
-        const PageHeading('Pedidos'),
-        const SectionHeader('Activos', topSpacing: 0),
-        // The separator starts where the text does, past the status dot.
-        InsetGroup(
-          separatorIndent: 36,
-          children: [
-            for (final order in activeOrders)
-              _ActiveOrderRow(order, onTap: () => _openOrder(context, order)),
-          ],
-        ),
-        const SectionHeader('Entregados'),
-        InsetGroup(
-          separatorIndent: 0,
-          children: [for (final order in deliveredOrders) _DeliveredOrderRow(order)],
-        ),
+        OrdersScreen._heading,
+        if (orders.isEmpty) const GroupFootnote('Todavía no tienes pedidos.'),
+        if (activeOrders.isNotEmpty) ...[
+          const SectionHeader('Activos', topSpacing: 0),
+          // The separator starts where the text does, past the status dot.
+          InsetGroup(
+            separatorIndent: 36,
+            children: [
+              for (final order in activeOrders)
+                _ActiveOrderRow(order, onTap: () => _openOrder(context, order)),
+            ],
+          ),
+        ],
+        if (deliveredOrders.isNotEmpty) ...[
+          const SectionHeader('Entregados'),
+          InsetGroup(
+            separatorIndent: 0,
+            children: [for (final order in deliveredOrders) _DeliveredOrderRow(order)],
+          ),
+        ],
         const SizedBox(height: 24),
         ActionButton.tinted(
           label: 'Agendar una cita',
