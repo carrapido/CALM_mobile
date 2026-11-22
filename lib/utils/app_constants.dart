@@ -28,6 +28,11 @@ class AppConstants {
   static const String bookingPhoneWithoutNip =
       'Ese celular ya está registrado en el taller. Escríbele para que te dé tu NIP.';
   static const String bookingSlotTaken = 'Ese horario se acaba de ocupar. Elige otro.';
+  /// Answers to "Cancelar cita" and "Voy en camino" the workshop refused.
+  static const String cancelRefused = 'Ya no se puede cancelar desde la app: escríbele al taller.';
+  static const String onTheWayRefused =
+      'Tu pedido ya no está listo para recoger. Escríbele al taller.';
+
   static const String bookingServiceUnavailable =
       'Uno de tus arreglos ya no está disponible. Vuelve a elegirlos.';
   static const String labelPrimeraVez = '¿Primera vez?';

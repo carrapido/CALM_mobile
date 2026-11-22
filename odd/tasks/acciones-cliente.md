@@ -37,6 +37,11 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
 - **S8** — Perfil saves the phone and the NIP on the server, checking the current NIP there; a
   phone another client uses is refused.
 - **S9** — "Cerrar sesión" ends the Supabase session on the device before returning to Entrada.
+- **S11** — Derived: refusals the design never had to word. "Voy en camino" on an order that is no
+  longer ready says "Tu pedido ya no está listo para recoger. Escríbele al taller."; a cancellation
+  the workshop refuses says "Ya no se puede cancelar desde la app: escríbele al taller." and keeps
+  the client on her appointment. `onTheWay` replaces batch 2's reading of it as "Listo para
+  recoger" (`datos-reales-cliente.md` S6) and sits on the "Listo" step of the progress bar.
 - **S10** — No secret in either repository, and no NIP in any file or log.
 
 ## Tasks
@@ -49,7 +54,8 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
 - [x] **T3** (S8) — CALM_web: `client-update-profile` Edge Function. CALM_web `68c6cb3`.
 - [x] **T4** (S3–S5) — App: "Agendar cita" books on the server. A slot taken meanwhile is
       marked booked in the sheet, which moves to the nearest free time.
-- [ ] **T5** (S6, S7) — App: cancel and "Voy en camino" on the server.
+- [x] **T4 commit** — `4831219`.
+- [x] **T5** (S6, S7, S11) — App: cancel and "Voy en camino" on the server.
 - [ ] **T6** (S8, S9) — App: Perfil saves on the server; "Cerrar sesión" ends the session.
 
 ## Log
@@ -80,6 +86,10 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
 - **L7** — Evidence for T4: the app's exact `functions.invoke('client-book')` books and installs
   the session of the new account, which reads its own appointment; a taken slot raises
   `FunctionException` 409 with `details` a `Map` whose `code` is `slot_taken`; a wrong NIP 401.
+- **L8** — Evidence for T5: the app's exact `rpc` calls, Lucía marking her ready order (fixture)
+  `done` and then refused with `PostgrestException` code `P0001`; María cancelling an appointment
+  booked for the 30th `done` and then refused with `P0001`. Order 5512 was restored to
+  `inProgress`; the appointment count is back to 4.
 - **L3** — Review: the open lineage `review-fc190b36772165fa` failed a third time with "no model is
   configured for review-risk"; the routing file is not readable by the agent. Per-role models are
   set in `/gentle:profiles`.

@@ -1,6 +1,7 @@
 import 'package:calm_mobil/models/appointment_agenda.dart';
 import 'package:calm_mobil/models/booking.dart';
 import 'package:calm_mobil/models/catalog.dart';
+import 'package:calm_mobil/models/client_action.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/user_profile.dart';
@@ -81,6 +82,7 @@ class FakeClientData implements ClientData {
     this.profileResult = demoProfile,
     this.agendaResult = demoAgenda,
     this.bookingResult = const BookingConfirmed('0937'),
+    this.actionResult = const ActionDone(),
   });
 
   Catalog catalogResult;
@@ -89,6 +91,9 @@ class FakeClientData implements ClientData {
   AppointmentAgenda agendaResult;
   BookingOutcome bookingResult;
   final bookings = <BookingRequest>[];
+  ClientActionOutcome actionResult;
+  final cancelledTickets = <String>[];
+  final onTheWayTickets = <String>[];
   bool fails = false;
   int loads = 0;
 
@@ -108,6 +113,18 @@ class FakeClientData implements ClientData {
   Future<BookingOutcome> book(BookingRequest request) async {
     bookings.add(request);
     return bookingResult;
+  }
+
+  @override
+  Future<ClientActionOutcome> cancelAppointment(String ticket) async {
+    cancelledTickets.add(ticket);
+    return actionResult;
+  }
+
+  @override
+  Future<ClientActionOutcome> markOnMyWay(String ticket) async {
+    onTheWayTickets.add(ticket);
+    return actionResult;
   }
 
   Future<T> _answer<T>(T result) async {

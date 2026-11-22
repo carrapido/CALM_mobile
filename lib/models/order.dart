@@ -6,6 +6,8 @@ enum OrderStatus {
   received('Recibido'),
   inProgress('En proceso'),
   ready('Listo para recoger'),
+  // She told the workshop with "Voy en camino"; the order still waits for her.
+  onTheWay('Vas en camino'),
   delivered('Entregado');
 
   const OrderStatus(this.headline);
@@ -36,7 +38,7 @@ class Order {
   /// An appointment can be cancelled until 24 hours before it.
   final bool isCancellable;
 
-  bool get needsClient => status == OrderStatus.ready;
+  bool get needsClient => status == OrderStatus.ready || status == OrderStatus.onTheWay;
 
   bool get isAppointment => status == OrderStatus.appointment;
 
@@ -69,8 +71,8 @@ class Order {
     return switch (value) {
       'received' => OrderStatus.received,
       'inProgress' => OrderStatus.inProgress,
-      // "Voy en camino" arrives in batch 3; until then the order still waits for the client.
-      'ready' || 'onTheWay' => OrderStatus.ready,
+      'ready' => OrderStatus.ready,
+      'onTheWay' => OrderStatus.onTheWay,
       'delivered' => OrderStatus.delivered,
       // A cancelled order is not listed.
       _ => null,
@@ -115,6 +117,7 @@ class _ListedOrder {
 
   static const _rank = {
     OrderStatus.ready: 0,
+    OrderStatus.onTheWay: 0,
     OrderStatus.appointment: 1,
     OrderStatus.inProgress: 2,
     OrderStatus.received: 3,

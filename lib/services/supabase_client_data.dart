@@ -4,6 +4,7 @@ import '../models/appointment_agenda.dart';
 import '../models/booking.dart';
 import '../models/booking_form.dart';
 import '../models/catalog.dart';
+import '../models/client_action.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
 import '../utils/app_constants.dart';
@@ -80,6 +81,29 @@ class SupabaseClientData implements ClientData {
     } catch (_) {
       // No network or a malformed answer: nothing is known about the booking.
       return const BookingRefused(AppConstants.signInUnavailable);
+    }
+  }
+
+  @override
+  Future<ClientActionOutcome> cancelAppointment(String ticket) {
+    return _act('cancel_my_appointment', ticket, refusal: AppConstants.cancelRefused);
+  }
+
+  @override
+  Future<ClientActionOutcome> markOnMyWay(String ticket) {
+    return _act('mark_on_my_way', ticket, refusal: AppConstants.onTheWayRefused);
+  }
+
+  /// The workshop's functions raise P0001 when the rule refuses, so a refusal is never mistaken
+  /// for a success and is told apart from a failure to reach it.
+  Future<ClientActionOutcome> _act(String function, String ticket, {required String refusal}) async {
+    try {
+      await _supabase.rpc<void>(function, params: {'p_ticket': ticket});
+      return const ActionDone();
+    } on PostgrestException catch (failure) {
+      return ActionRefused(failure.code == 'P0001' ? refusal : AppConstants.signInUnavailable);
+    } catch (_) {
+      return const ActionRefused(AppConstants.signInUnavailable);
     }
   }
 

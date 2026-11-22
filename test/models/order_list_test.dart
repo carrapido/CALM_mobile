@@ -60,16 +60,18 @@ void main() {
         orderRow(ticket: '1', status: 'received'),
         orderRow(ticket: '2', status: 'inProgress'),
         orderRow(ticket: '3', status: 'ready'),
+        orderRow(ticket: '5', status: 'onTheWay'),
         orderRow(ticket: '4', status: 'delivered'),
       ]).map((order) => order.status);
 
       expect(statuses, containsAll(OrderStatus.values.where((s) => s != OrderStatus.appointment)));
     });
 
-    test('reads an order the client is on her way to as ready to pick up', () {
+    test('reads an order the client is on her way to as such, still needing her', () {
       final order = listFrom(orders: [orderRow(status: 'onTheWay')]).single;
 
-      expect(order.statusLine, 'Listo para recoger');
+      expect(order.statusLine, 'Vas en camino');
+      expect(order.needsClient, isTrue);
     });
 
     test('leaves cancelled orders out', () {

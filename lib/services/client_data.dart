@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../models/appointment_agenda.dart';
 import '../models/booking.dart';
 import '../models/catalog.dart';
+import '../models/client_action.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
 
@@ -26,6 +27,12 @@ abstract interface class ClientData {
 
   /// Books [request], creating her account when the phone is new, and signs her in.
   Future<BookingOutcome> book(BookingRequest request);
+
+  /// Cancels her appointment [ticket]: only one with no order yet, more than 24 hours ahead.
+  Future<ClientActionOutcome> cancelAppointment(String ticket);
+
+  /// Tells the workshop she is on her way to pick up her ready order [ticket].
+  Future<ClientActionOutcome> markOnMyWay(String ticket);
 }
 
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.
