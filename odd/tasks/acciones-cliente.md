@@ -98,6 +98,19 @@ and act on the CALM Supabase project. Builds on `acceso-cliente-supabase.md` (si
   `auth.signOut()` there is no session and the function answers 401 `signed_out`. `gotrue` 2.27.3
   removes the local session before calling the server (`gotrue_client.dart:1088-1101`), so
   signing out holds even offline. The failed attempt the test left was cleared.
+- **L10** — Closing verification. Static: `flutter analyze` clean, 141 tests, `deno check` of the
+  three functions clean, `flutter build web --release` built. Deployed functions are identical to
+  the committed files, shared module included. The four migrations were renamed in CALM_web
+  (`fdad4b7`) to the versions the project recorded, which `apply_migration` had stamped with its own
+  time; with the old names `supabase db push` would have re-run them. End to end against the live
+  project, a new client's whole journey passed 14 of 14 checks: catalog and agenda without a
+  session, nothing private readable, booking with the quoted total and the session installed,
+  Pedidos listing exactly her cancellable appointment, Perfil reading only her row, the agenda
+  showing her slot taken, refused on someone else's order, cancelling, changing her NIP, signing
+  out, the old NIP refused and the new one accepted. The test client was removed; the project is
+  back to 7 clients, 4 appointments and its four orders as they were. Advisors: only the intended
+  WARNs on the client functions and pre-existing items, plus a performance WARN that admin and
+  client SELECT policies coexist on five tables.
 - **L3** — Review: the open lineage `review-fc190b36772165fa` failed a third time with "no model is
   configured for review-risk"; the routing file is not readable by the agent. Per-role models are
   set in `/gentle:profiles`.
