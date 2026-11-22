@@ -16,6 +16,11 @@ class AppConstants {
       'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
   static const String signInUnavailable =
       'No pudimos conectarnos. Revisa tu internet e inténtalo de nuevo.';
+
+  /// Any screen whose data could not load.
+  static const String loadFailed =
+      'No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.';
+  static const String btnRetry = 'Reintentar';
   static const String labelPrimeraVez = '¿Primera vez?';
   static const String titleAgendaCita = 'Agenda una cita';
   static const String subtitleAgendaCita = 'Eliges tus arreglos y creas tu NIP.';

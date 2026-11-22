@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/supabase_config.dart';
 import 'routes/app_routes.dart';
+import 'services/client_data.dart';
+import 'services/supabase_client_data.dart';
 import 'themes/app_theme.dart';
 import 'widgets/missing_config_screen.dart';
 
@@ -16,7 +18,12 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     publishableKey: SupabaseConfig.publishableKey,
   );
-  runApp(const MyApp());
+  runApp(
+    ClientDataScope(
+      data: SupabaseClientData(Supabase.instance.client),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
