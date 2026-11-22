@@ -1,14 +1,17 @@
 import 'package:flutter/widgets.dart';
 
 import '../models/appointment_agenda.dart';
+import '../models/booking.dart';
 import '../models/catalog.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
 
-/// What the client's screens read from the workshop, without knowing where it comes from.
+/// What the client's screens read from the workshop and ask it to do, without knowing where it
+/// lives.
 ///
-/// Row level security decides what the signed-in client reaches; this interface only names
-/// what each screen needs. See `odd/tasks/datos-reales-cliente.md`.
+/// Row level security and the workshop's functions decide what the client reaches and may change;
+/// this interface only names what each screen needs. See `odd/tasks/datos-reales-cliente.md` and
+/// `odd/tasks/acciones-cliente.md`.
 abstract interface class ClientData {
   Future<Catalog> catalog();
 
@@ -20,6 +23,9 @@ abstract interface class ClientData {
 
   /// This month's free slots, with or without a session; never who booked the others.
   Future<AppointmentAgenda> agenda();
+
+  /// Books [request], creating her account when the phone is new, and signs her in.
+  Future<BookingOutcome> book(BookingRequest request);
 }
 
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.

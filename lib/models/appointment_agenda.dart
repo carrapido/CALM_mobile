@@ -5,6 +5,8 @@ import '../utils/spanish_dates.dart' as dates;
 /// 7 (Sunday); times are Cancún wall-clock "HH:MM".
 class AppointmentAgenda {
   const AppointmentAgenda({
+    required this.year,
+    required this.month,
     required this.monthName,
     required this.monthLongName,
     required this.daysInMonth,
@@ -23,6 +25,8 @@ class AppointmentAgenda {
     final today = DateTime.parse(calendar['today'] as String);
     final month = dates.monthName(today.month);
     return AppointmentAgenda(
+      year: today.year,
+      month: today.month,
       monthName: '${month[0].toUpperCase()}${month.substring(1)} ${today.year}',
       monthLongName: month,
       daysInMonth: DateTime(today.year, today.month + 1, 0).day,
@@ -52,6 +56,8 @@ class AppointmentAgenda {
     'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo',
   ];
 
+  final int year;
+  final int month;
   final String monthName;
   final String monthLongName;
   final int daysInMonth;
@@ -71,6 +77,32 @@ class AppointmentAgenda {
       for (final slot in slotsByWeekday[weekdayOf(day)] ?? const <String>[])
         if (!booked.contains(slot) && (day != today || slot.compareTo(nowTime) > 0)) slot,
     ];
+  }
+
+  /// [day] of this month as the server writes a date: "2026-11-05".
+  String isoDate(int day) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '$year-${twoDigits(month)}-${twoDigits(day)}';
+  }
+
+  /// This agenda with [time] of [day] booked, as when someone took it meanwhile.
+  AppointmentAgenda withBooked(int day, String time) {
+    return AppointmentAgenda(
+      year: year,
+      month: month,
+      monthName: monthName,
+      monthLongName: monthLongName,
+      daysInMonth: daysInMonth,
+      firstWeekday: firstWeekday,
+      today: today,
+      nowTime: nowTime,
+      slotsByWeekday: slotsByWeekday,
+      blockedDays: blockedDays,
+      bookedSlots: {
+        ...bookedSlots,
+        day: [...?bookedSlots[day], time],
+      },
+    );
   }
 
   /// Where "Agendar cita" opens: the first free day after today, or today when it is the only

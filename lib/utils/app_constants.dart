@@ -21,6 +21,15 @@ class AppConstants {
   static const String loadFailed =
       'No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.';
   static const String btnRetry = 'Reintentar';
+
+  /// Booking answers from the workshop (odd/tasks/acciones-cliente.md S3, S4).
+  static const String bookingWrongPair =
+      'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.';
+  static const String bookingPhoneWithoutNip =
+      'Ese celular ya está registrado en el taller. Escríbele para que te dé tu NIP.';
+  static const String bookingSlotTaken = 'Ese horario se acaba de ocupar. Elige otro.';
+  static const String bookingServiceUnavailable =
+      'Uno de tus arreglos ya no está disponible. Vuelve a elegirlos.';
   static const String labelPrimeraVez = '¿Primera vez?';
   static const String titleAgendaCita = 'Agenda una cita';
   static const String subtitleAgendaCita = 'Eliges tus arreglos y creas tu NIP.';

@@ -1,4 +1,5 @@
 import 'package:calm_mobil/models/appointment_agenda.dart';
+import 'package:calm_mobil/models/booking.dart';
 import 'package:calm_mobil/models/catalog.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
@@ -41,6 +42,8 @@ const demoOrders = [
 /// The panel's demo agenda: the 1st is a Sunday, today is Wednesday the 4th at 15:00,
 /// Sundays are closed and Friday the 6th was blocked.
 const demoAgenda = AppointmentAgenda(
+  year: 2026,
+  month: 11,
   monthName: 'Noviembre 2026',
   monthLongName: 'noviembre',
   daysInMonth: 30,
@@ -77,12 +80,15 @@ class FakeClientData implements ClientData {
     this.ordersResult = demoOrders,
     this.profileResult = demoProfile,
     this.agendaResult = demoAgenda,
+    this.bookingResult = const BookingConfirmed('0937'),
   });
 
   Catalog catalogResult;
   List<Order> ordersResult;
   UserProfile profileResult;
   AppointmentAgenda agendaResult;
+  BookingOutcome bookingResult;
+  final bookings = <BookingRequest>[];
   bool fails = false;
   int loads = 0;
 
@@ -97,6 +103,12 @@ class FakeClientData implements ClientData {
 
   @override
   Future<AppointmentAgenda> agenda() => _answer(agendaResult);
+
+  @override
+  Future<BookingOutcome> book(BookingRequest request) async {
+    bookings.add(request);
+    return bookingResult;
+  }
 
   Future<T> _answer<T>(T result) async {
     loads++;

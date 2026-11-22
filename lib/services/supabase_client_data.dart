@@ -1,9 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_agenda.dart';
+import '../models/booking.dart';
+import '../models/booking_form.dart';
 import '../models/catalog.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
+import '../utils/app_constants.dart';
 import '../utils/spanish_dates.dart';
 import 'client_data.dart';
 
@@ -50,5 +53,46 @@ class SupabaseClientData implements ClientData {
   Future<AppointmentAgenda> agenda() async {
     final calendar = await _supabase.rpc<Map<String, dynamic>>('booking_calendar');
     return AppointmentAgenda.fromCalendar(calendar);
+  }
+
+  /// The `client-book` function decides the slot, the total and the ticket, and answers with a
+  /// refresh token so the client is signed in as the owner of her new appointment.
+  @override
+  Future<BookingOutcome> book(BookingRequest request) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'client-book',
+        body: {
+          'name': request.name,
+          'phone': request.phoneDigits,
+          'nip': request.nip,
+          'service_ids': [for (final service in request.selection.services) int.parse(service.id)],
+          'urgent': request.selection.isUrgent,
+          'date': request.date,
+          'time': request.time,
+        },
+      );
+      final body = response.data as Map<String, dynamic>;
+      await _supabase.auth.setSession(body['refresh_token'] as String);
+      return BookingConfirmed(body['ticket'] as String);
+    } on FunctionException catch (failure) {
+      return _bookingRefusalFor(failure.status, failure.details);
+    } catch (_) {
+      // No network or a malformed answer: nothing is known about the booking.
+      return const BookingRefused(AppConstants.signInUnavailable);
+    }
+  }
+
+  static BookingOutcome _bookingRefusalFor(int status, dynamic details) {
+    final code = details is Map ? details['code'] : null;
+    return switch ((status, code)) {
+      (401, _) => const BookingRefused(AppConstants.bookingWrongPair, field: BookingField.nip),
+      (429, _) => const BookingRefused(AppConstants.signInThrottled),
+      (409, 'slot_taken') => const BookingSlotTaken(),
+      (409, 'phone_without_nip') =>
+        const BookingRefused(AppConstants.bookingPhoneWithoutNip, field: BookingField.phone),
+      (409, 'service_unavailable') => const BookingRefused(AppConstants.bookingServiceUnavailable),
+      _ => const BookingRefused(AppConstants.signInUnavailable),
+    };
   }
 }
