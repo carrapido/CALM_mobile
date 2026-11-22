@@ -49,3 +49,9 @@ app.*.map.json
 
 # Claude Code
 .claude/
+
+# Local Supabase credentials (see env/README.md)
+/env/supabase.json
+
+# Pi project config
+.pi/
