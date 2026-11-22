@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/demo_client_access.dart';
 import '../models/login_form.dart';
 import '../routes/app_routes.dart';
+import '../services/client_access.dart';
+import '../services/supabase_client_access.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
@@ -20,7 +22,10 @@ import '../widgets/top_app_bar_widget.dart';
 
 /// Entrada: the client signs in with phone and NIP, or starts booking a first appointment.
 class InicioSesionScreen extends StatefulWidget {
-  const InicioSesionScreen({super.key});
+  const InicioSesionScreen({super.key, this.access});
+
+  /// Who checks the phone and the NIP. Tests pass their own; the app talks to Supabase.
+  final ClientAccess? access;
 
   @override
   State<InicioSesionScreen> createState() => _InicioSesionScreenState();
@@ -30,7 +35,11 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   final _phoneController = TextEditingController();
   final _nipController = TextEditingController();
   final _nipFocus = FocusNode();
-  bool _showsProblem = false;
+  late final ClientAccess _access =
+      widget.access ?? SupabaseClientAccess(Supabase.instance.client);
+  String? _message;
+  LoginField? _invalidField;
+  bool _isSigningIn = false;
   bool _hadCompletePhone = false;
 
   @override
@@ -43,7 +52,6 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final problem = _showsProblem ? _currentProblem() : null;
     return Scaffold(
       backgroundColor: AppColors.groupedBackground,
       appBar: TopAppBarWidget(onHelpPressed: _openHelp),
@@ -62,8 +70,8 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
                       AppConstants.loginTitle,
                       subtitle: AppConstants.loginSubtitle,
                     ),
-                    _credentialsGroup(problem?.field),
-                    if (problem != null) _ProblemMessage(problem.message),
+                    _credentialsGroup(_invalidField),
+                    if (_message != null) _ProblemMessage(_message!),
                     const SizedBox(height: 20),
                     ActionButton.primary(label: AppConstants.btnVerPedidos, onPressed: _signIn),
                     const SizedBox(height: 4),
@@ -79,12 +87,6 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
         ),
       ),
     );
-  }
-
-  LoginProblem? _currentProblem() {
-    final form = LoginForm(phone: _phoneController.text, nip: _nipController.text);
-    final credentialsMatch = DemoClientAccess.owns(phoneDigits: form.phoneDigits, nip: form.nip);
-    return form.firstProblem(credentialsMatch: credentialsMatch);
   }
 
   void _openHelp() => showHelpSheet(context);
@@ -117,7 +119,7 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
           ],
           obscureText: true,
           textInputAction: TextInputAction.done,
-          onChanged: (_) => _hideProblem(),
+          onChanged: (_) => _hideMessage(),
           onSubmitted: (_) => _signIn(),
         ),
       ],
@@ -129,20 +131,56 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
     final hasCompletePhone = LoginForm(phone: phone, nip: '').hasCompletePhone;
     final justCompleted = hasCompletePhone && !_hadCompletePhone;
     _hadCompletePhone = hasCompletePhone;
-    _hideProblem();
+    _hideMessage();
     if (justCompleted) _nipFocus.requestFocus();
   }
 
-  void _hideProblem() {
-    if (_showsProblem) setState(() => _showsProblem = false);
+  void _hideMessage() {
+    if (_message == null) return;
+    setState(() {
+      _message = null;
+      _invalidField = null;
+    });
   }
 
-  void _signIn() {
-    if (_currentProblem() != null) {
-      setState(() => _showsProblem = true);
+  /// The form's own rules first; only a complete pair is worth a trip to the backend.
+  Future<void> _signIn() async {
+    if (_isSigningIn) return;
+    final form = LoginForm(phone: _phoneController.text, nip: _nipController.text);
+    // The pair itself is the backend's to judge, so the local check is told it matches.
+    final incomplete = form.firstProblem(credentialsMatch: true);
+    if (incomplete != null) {
+      _show(incomplete.message, field: incomplete.field);
       return;
     }
-    Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
+
+    setState(() => _isSigningIn = true);
+    final outcome = await _access.signIn(phoneDigits: form.phoneDigits, nip: form.nip);
+    if (!mounted) return;
+    setState(() => _isSigningIn = false);
+    _answer(outcome, form);
+  }
+
+  void _answer(SignInOutcome outcome, LoginForm form) {
+    switch (outcome) {
+      case SignInGranted():
+        Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
+      case SignInRejected():
+        // The wording of a wrong pair belongs to the form, so it reads the same as ever.
+        final mismatch = form.firstProblem(credentialsMatch: false)!;
+        _show(mismatch.message, field: mismatch.field);
+      case SignInThrottled():
+        _show(AppConstants.signInThrottled);
+      case SignInUnavailable():
+        _show(AppConstants.signInUnavailable);
+    }
+  }
+
+  void _show(String message, {LoginField? field}) {
+    setState(() {
+      _message = message;
+      _invalidField = field;
+    });
   }
 
   void _openServices() => Navigator.of(context).pushNamed(AppRoutes.services);

@@ -33,18 +33,25 @@ This delivery covers sign-in only; the screens keep their mock data until the ne
   requirement: "The real check belongs to the API, which must throttle NIP attempts per phone."
 - **S8** — A signed-in client reaches only her own data. Today every RLS policy on the eight tables
   is `private.is_admin()`; the client needs her own policies, never a relaxation of the admin ones.
+- **S9** — Derived, not asked for: a sign-in can now fail for reasons the design never worded,
+  because there was no backend when it was written. Two messages were added for them, and only
+  them: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." (throttled) and "No
+  pudimos conectarnos. Revisa tu internet e inténtalo de nuevo." (unreachable). Every message the
+  design did define keeps its exact wording.
 
 ## Tasks
 
-- [ ] **T1** (S3) — Supabase bootstrap in Flutter: `supabase_flutter` dependency, git-ignored env
-      file plus committed example, async `main()` initialization.
-- [ ] **T2** (S1, S8) — Migration adding the client's own RLS policies, leaving the admin policies
-      untouched.
-- [ ] **T3** (S2, S6, S7) — Edge Function `client-sign-in`: looks the client up by phone, verifies
+- [x] **T1** (S3) — Supabase bootstrap in Flutter: `supabase_flutter` dependency, git-ignored env
+      file plus committed example, async `main()` initialization. Commit `ce01572`.
+- [x] **T2** (S1, S8) — Migration adding the client's own RLS policies, leaving the admin policies
+      untouched. `CALM_web/supabase/migrations/20261122180000_client_app_access.sql`, applied.
+- [x] **T3** (S2, S6, S7) — Edge Function `client-sign-in`: looks the client up by phone, verifies
       the NIP with argon2id, throttles per phone, and returns a session.
-- [ ] **T4** (S4, S5) — Flutter auth repository and Entrada wiring, replacing `DemoClientAccess`
-      without changing a single message. Tests first.
-- [ ] **T5** (S1, S2) — One real test client with a NIP, and end-to-end verification of the sign-in.
+      `CALM_web/supabase/functions/client-sign-in/index.ts` plus
+      `migrations/20261122181000_client_sign_in_attempts.sql`, both applied and deployed.
+- [x] **T4** (S4, S5, S9) — Flutter auth repository and Entrada wiring, replacing
+      `DemoClientAccess` without changing a single message. Tests first.
+- [x] **T5** (S1, S2) — One real test client with a NIP, and end-to-end verification of the sign-in.
 
 ## Log
 
@@ -67,6 +74,15 @@ This delivery covers sign-in only; the screens keep their mock data until the ne
   ser por argon2id" → Edge Function route, not the email-alias shortcut and not SMS OTP.
 - **L4** — User decision on scope: "Primero solo el login contra la base".
 - **L5** — User constraint: "no dejes ningun secreto en el repo".
+- **L7** — Verification of the delivered sign-in, against the live project.
+  Rejection: an unknown phone and a wrong NIP both answer HTTP 401 with the same body; a
+  malformed pair answers 400. Success: `998 123 4567` + `2580` answers HTTP 200 with a session;
+  `auth.users` went from 1 to 2, the account was created once and reused across three sign-ins,
+  and `clients.user_id` of client 2 points at `9981234567@clients.calm.app`.
+  Row level security with that session: `clients` returns exactly her own row, while `orders`,
+  `services` and `sign_in_attempts` return nothing, and anon without a session returns nothing.
+  Throttling: a failed attempt is counted, a successful sign-in clears it.
+  Flutter: 94 tests pass, `flutter analyze` clean.
 - **L6** — Who creates the NIP is already answered by `odd/tasks/entrada-screen.md`: "¿Primera vez?"
   → "Agenda una cita / Eliges tus arreglos y creas tu NIP." Enrollment belongs to the booking flow,
   out of this delivery's scope; T5 seeds one client so the sign-in can be verified.

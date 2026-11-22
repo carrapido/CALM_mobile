@@ -1,4 +1,3 @@
-import 'package:calm_mobil/models/demo_client_access.dart';
 import 'package:calm_mobil/models/login_form.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,20 +50,6 @@ void main() {
 
     test('counts only the digits of the phone', () {
       expect(const LoginForm(phone: '998 123 4567', nip: '').phoneDigits, '9981234567');
-    });
-  });
-
-  group('DemoClientAccess.owns', () {
-    test('accepts the demo client phone and NIP', () {
-      expect(DemoClientAccess.owns(phoneDigits: '9981234567', nip: '2580'), isTrue);
-    });
-
-    test('rejects any other NIP', () {
-      expect(DemoClientAccess.owns(phoneDigits: '9981234567', nip: '1111'), isFalse);
-    });
-
-    test('rejects any other phone', () {
-      expect(DemoClientAccess.owns(phoneDigits: '9980000000', nip: '2580'), isFalse);
     });
   });
 }

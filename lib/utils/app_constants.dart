@@ -10,6 +10,12 @@ class AppConstants {
   static const String hintNip = '4 dígitos';
   static const String btnVerPedidos = 'Ver mis pedidos';
   static const String btnOlvideNip = 'Olvidé mi NIP';
+
+  /// Sign-in answers that are not about what the client typed.
+  static const String signInThrottled =
+      'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+  static const String signInUnavailable =
+      'No pudimos conectarnos. Revisa tu internet e inténtalo de nuevo.';
   static const String labelPrimeraVez = '¿Primera vez?';
   static const String titleAgendaCita = 'Agenda una cita';
   static const String subtitleAgendaCita = 'Eliges tus arreglos y creas tu NIP.';
