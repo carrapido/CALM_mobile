@@ -83,6 +83,25 @@ This delivery covers sign-in only; the screens keep their mock data until the ne
   `services` and `sign_in_attempts` return nothing, and anon without a session returns nothing.
   Throttling: a failed attempt is counted, a successful sign-in clears it.
   Flutter: 94 tests pass, `flutter analyze` clean.
+- **L8** — Self-verification after the independent verifier came back unavailable (the configured
+  subagent model failed to authenticate; it was not retried). Two findings were fixed and the
+  function redeployed as v2: an error thrown while creating or linking the auth user escaped the
+  handler and could have reached the caller, so the whole sign-in is wrapped and answers one
+  wording while the detail goes to the function log; and the answer carried an `access_token`
+  nobody used, so only the refresh token travels now.
+  Checks run after that: throttling locks the phone on the sixth consecutive failure (five 401s,
+  then 429) and `sign_in_attempts` was emptied afterwards; an unknown phone and a wrong NIP take
+  about the same time (1.20/1.22, 1.40/1.34, 0.71/1.32 seconds), so the decoy hash does its job;
+  Supabase security advisors report nothing new beyond the intentional INFO that
+  `sign_in_attempts` has RLS with no policy, which is how only the service role reaches it.
+  The exact Dart contract the app depends on was exercised from a throwaway project outside the
+  repository: `functions.invoke` returns `{refresh_token, client}` with status 200,
+  `auth.setSession(refresh_token)` installs the session of `9981234567@clients.calm.app`, that
+  session reads only her own `clients` row and no `orders`, a wrong NIP raises
+  `FunctionException` with status 401, and the sixth attempt raises status 429 — the three
+  branches `SupabaseClientAccess` maps.
+  Still unverified: the screen has not been run on a device; only its contract and its widget
+  tests were exercised.
 - **L6** — Who creates the NIP is already answered by `odd/tasks/entrada-screen.md`: "¿Primera vez?"
   → "Agenda una cita / Eliges tus arreglos y creas tu NIP." Enrollment belongs to the booking flow,
   out of this delivery's scope; T5 seeds one client so the sign-in can be verified.
