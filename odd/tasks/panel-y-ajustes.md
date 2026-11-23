@@ -50,8 +50,8 @@ due review.
       CALM_web `b633ff8`.
 - [x] **T3 commit** — `879c44b`.
 - [x] **T4** (S5) — One SELECT policy per table and role. CALM_web `82957f1`.
-- [ ] **T5** (S2) — `admin-enroll-client` function and the panel's Clientes page. Backend done:
-      CALM_web `c7db5cb`; the page is CALM_web `odd/tasks/panel-clientes.md` T1.
+- [x] **T5** (S2) — `admin-enroll-client` function and the panel's Clientes page. CALM_web
+      `c7db5cb` (backend) and `584555a` (page, `odd/tasks/panel-clientes.md` T1).
 - [x] **T6** (S4) — `database.types.ts` regenerated. CALM_web `83d7017`.
 - [ ] **T7** (S3) — Leaked password protection on. Blocked: a dashboard switch the Supabase MCP
       cannot reach (Auth → Providers → Email → "Prevent use of leaked passwords").
@@ -119,5 +119,10 @@ due review.
   like the file they replace. `tsc -b` clean, 22 files and 130 tests pass.
 - **L11** — Subagents work again: the explorer mapped the panel's conventions, and the Clientes
   page is delegated to a worker against CALM_web `odd/tasks/panel-clientes.md`.
+- **L12** — T5's page, built by a worker (158 tests in CALM_web, `tsc` and `oxlint` clean, only
+  its allowed paths touched, no `nip_hash` in `src/clients`), then checked live by the
+  orchestrator with the real adapter: a client registered from the panel signs in to the app, and
+  after a reset from the panel the new pair signs in and the old one does not. Details in CALM_web
+  `odd/tasks/panel-clientes.md` L3, including a first run spoiled by a cleanup run in parallel.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.
