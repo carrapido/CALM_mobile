@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 ---
 
 # Agendar with an active session
@@ -61,3 +61,11 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   branches pushed. Live checks without writes: anon key or invalid token without contact → 400
   "Revisa los datos de tu cita."; guest with contact and a past slot → 409 slot_taken, no client
   created. Signed-in path not exercised live (needs a real client session).
+- **L6** — User chose for S4: "Backend avisa 401 y la app pide volver a entrar (recomendado)".
+  Independent verify: S3–S4 met (runtime probe against a local Supabase mock, 172/172 tests).
+  Native review of CALM_web main..aafa07f approved (5 advisory findings: refresh token minted from
+  an access token alone, extra auth call for guests, decision logic without runtime tests, session
+  silently overrides typed contact, a transient auth failure reads as signed_out). Deployed
+  `client-book` v7; both branches pushed. Live checks without writes: anon/garbage without contact
+  → 400; unverifiable user token without contact → 401 signed_out; with contact → guest path (409
+  on a past slot); invalid body → 400 first; no client created.
