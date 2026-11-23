@@ -109,7 +109,14 @@ class FakeClientData implements ClientData {
     this.bookingResult = const BookingConfirmed('0937'),
     this.actionResult = const ActionDone(),
     this.profileSaveResult,
+    this.signedIn = false,
   });
+
+  /// Whether a session is open on the device; screen tests start signed out.
+  bool signedIn;
+
+  @override
+  bool get isSignedIn => signedIn;
 
   Catalog catalogResult;
   List<Order> ordersResult;

@@ -15,6 +15,9 @@ import '../models/user_profile.dart';
 /// this interface only names what each screen needs. See `odd/tasks/datos-reales-cliente.md` and
 /// `odd/tasks/acciones-cliente.md`.
 abstract interface class ClientData {
+  /// Whether a session is open on this device, so the workshop already knows who she is.
+  bool get isSignedIn;
+
   Future<Catalog> catalog();
 
   /// Her orders and her appointments that have no order yet, in the order Pedidos lists them.

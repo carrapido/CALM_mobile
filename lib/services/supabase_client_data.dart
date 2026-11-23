@@ -19,6 +19,9 @@ class SupabaseClientData implements ClientData {
 
   final SupabaseClient _supabase;
 
+  @override
+  bool get isSignedIn => _supabase.auth.currentSession != null;
+
   /// Row level security only lets the active services through, with or without a session.
   @override
   Future<Catalog> catalog() async {
@@ -59,17 +62,21 @@ class SupabaseClientData implements ClientData {
     return BookingMonths.fromCalendar(calendar);
   }
 
-  /// The `client-book` function decides the slot, the total and the ticket, and answers with a
-  /// refresh token so the client is signed in as the owner of her new appointment.
+  /// The `client-book` function decides the slot, the total and the ticket. Without a session it
+  /// answers with a refresh token so the client is signed in as the owner of her new appointment;
+  /// with one, her session already names her and she keeps it.
   @override
   Future<BookingOutcome> book(BookingRequest request) async {
+    final contact = request.contact;
     try {
       final response = await _supabase.functions.invoke(
         'client-book',
         body: {
-          'name': request.name,
-          'phone': request.phoneDigits,
-          'nip': request.nip,
+          if (contact != null) ...{
+            'name': contact.name,
+            'phone': contact.phoneDigits,
+            'nip': contact.nip,
+          },
           'service_ids': [for (final service in request.selection.services) int.parse(service.id)],
           'urgent': request.selection.isUrgent,
           'date': request.date,
@@ -77,7 +84,7 @@ class SupabaseClientData implements ClientData {
         },
       );
       final body = response.data as Map<String, dynamic>;
-      await _supabase.auth.setSession(body['refresh_token'] as String);
+      if (contact != null) await _supabase.auth.setSession(body['refresh_token'] as String);
       return BookingConfirmed(body['ticket'] as String);
     } on FunctionException catch (failure) {
       return _bookingRefusalFor(failure.status, failure.details);
@@ -154,6 +161,7 @@ class SupabaseClientData implements ClientData {
   static BookingOutcome _bookingRefusalFor(int status, dynamic details) {
     final code = details is Map ? details['code'] : null;
     return switch ((status, code)) {
+      (401, 'signed_out') => const BookingSignedOut(),
       (401, _) => const BookingRefused(AppConstants.bookingWrongPair, field: BookingField.nip),
       (429, _) => const BookingRefused(AppConstants.signInThrottled),
       (409, 'slot_taken') => const BookingSlotTaken(),

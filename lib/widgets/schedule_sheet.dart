@@ -43,7 +43,11 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
       pending: (status) => Padding(padding: const EdgeInsets.all(16), child: status),
       builder: (_, months) => months.opening == null
           ? const _NoFreeSlots()
-          : ScheduleSheet(selection: selection, months: months),
+          : ScheduleSheet(
+              selection: selection,
+              months: months,
+              isSignedIn: ClientDataScope.of(sheetContext).isSignedIn,
+            ),
     ),
   );
 }
@@ -65,9 +69,17 @@ class _NoFreeSlots extends StatelessWidget {
 }
 
 class ScheduleSheet extends StatefulWidget {
-  const ScheduleSheet({super.key, required this.selection, required this.months});
+  const ScheduleSheet({
+    super.key,
+    required this.selection,
+    required this.months,
+    this.isSignedIn = false,
+  });
 
   final ServiceSelection selection;
+
+  /// A signed-in client is already known: "Tus datos" is only for one without an account yet.
+  final bool isSignedIn;
 
   /// Has at least one free slot: [showScheduleSheet] says so instead of opening an empty agenda.
   final BookingMonths months;
@@ -89,6 +101,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   // The workshop's refusal, shown until the client edits something.
   String? _refusal;
   BookingField? _refusedField;
+
+  // Booking again cannot help once her session ended: she has to sign in first.
+  bool _hasSessionEnded = false;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -168,16 +183,19 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
         onSettled: _settleOnFreeSlot,
       ),
       const GroupFootnote('Gira para elegir. Las horas en gris no están disponibles.'),
-      const SectionHeader('Tus datos', topSpacing: 20),
-      _contactGroup(problem),
-      const GroupFootnote(
-        'Con este celular y tu NIP ves tus pedidos. El NIP no es para pagar. '
-        'Te confirmamos por WhatsApp.',
-      ),
+      if (!widget.isSignedIn) ...[
+        const SectionHeader('Tus datos', topSpacing: 20),
+        _contactGroup(problem),
+        const GroupFootnote(
+          'Con este celular y tu NIP ves tus pedidos. El NIP no es para pagar. '
+          'Te confirmamos por WhatsApp.',
+        ),
+      ],
     ];
   }
 
   FieldProblem<BookingField>? _currentProblem() {
+    if (widget.isSignedIn) return null;
     return BookingForm(
       name: _nameController.text,
       phone: _phoneController.text,
@@ -291,8 +309,16 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
     final message = _refusal ?? (_showsProblem ? _currentProblem()?.message : null);
     return [
       if (message != null) FormAlert(message),
-      ActionButton.primary(label: 'Confirmar · $_summary', onPressed: _confirm),
+      _hasSessionEnded
+          ? ActionButton.primary(label: 'Volver a entrar', onPressed: _signInAgain)
+          : ActionButton.primary(label: 'Confirmar · $_summary', onPressed: _confirm),
     ];
+  }
+
+  Future<void> _signInAgain() async {
+    await ClientDataScope.of(context).signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
   }
 
   /// The form's own rules first; only complete data is worth a trip to the workshop.
@@ -314,9 +340,13 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
 
   BookingRequest _bookingRequest() {
     return BookingRequest(
-      name: _nameController.text.trim(),
-      phoneDigits: digitsOf(_phoneController.text),
-      nip: _nipController.text,
+      contact: widget.isSignedIn
+          ? null
+          : BookingContact(
+              name: _nameController.text.trim(),
+              phoneDigits: digitsOf(_phoneController.text),
+              nip: _nipController.text,
+            ),
       selection: widget.selection,
       date: _agenda.isoDate(_day),
       time: _time,
@@ -335,6 +365,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
       case BookingRefused(:final message, :final field):
         _refusal = message;
         _refusedField = field;
+      case BookingSignedOut():
+        _refusal = AppConstants.bookingSignedOut;
+        _hasSessionEnded = true;
     }
   }
 
