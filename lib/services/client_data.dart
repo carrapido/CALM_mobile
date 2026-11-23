@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../models/appointment_agenda.dart';
 import '../models/booking.dart';
+import '../models/booking_months.dart';
 import '../models/catalog.dart';
 import '../models/client_action.dart';
 import '../models/order.dart';
@@ -23,8 +23,9 @@ abstract interface class ClientData {
   /// The signed-in client herself.
   Future<UserProfile> profile();
 
-  /// This month's free slots, with or without a session; never who booked the others.
-  Future<AppointmentAgenda> agenda();
+  /// This month's and next month's free slots, with or without a session; never who booked the
+  /// others.
+  Future<BookingMonths> agenda();
 
   /// Books [request], creating her account when the phone is new, and signs her in.
   Future<BookingOutcome> book(BookingRequest request);

@@ -34,6 +34,10 @@ due review.
   urgencia"; "Por el momento dejamos sin asignar el "como llegar", el Whatsapp y el "lalmar al
   taller"".
 - **S9** — No secret and no working NIP in any committed file.
+- **S10** — Derived: where the sheet opens across two months. Batch 2's rule (first free day after
+  today; today only when no later day is free) now looks at both months, so on the last morning of
+  a month it opens on the next month's first free day. ‹ and › go only to a month with a free day;
+  another month opens on its first free day at the free time closest to the one chosen.
 
 ## Tasks
 
@@ -41,7 +45,9 @@ due review.
 - [x] **T1** (S7, S9) — Rotate María's NIP; remove working NIPs from the docs.
 - [x] **T2** (S7) — Sign-in findings: parse before installing the session, timeout, disabled
       button while waiting, outcome ignored when the form changed, mapping tests, named form API.
-- [ ] **T3** (S6) — `booking_calendar` covers this month and the next; the sheet navigates ‹ ›.
+- [x] **T1 commit** — `f4e5d16`; **T2** — `be5a019`.
+- [x] **T3** (S6, S10) — `booking_calendar` covers this month and the next; the sheet navigates ‹ ›.
+      CALM_web `b633ff8`.
 - [ ] **T4** (S5) — One SELECT policy per table and role.
 - [ ] **T5** (S2) — `admin-enroll-client` function and the panel's Clientes page.
 - [ ] **T6** (S4) — `database.types.ts` regenerated.
@@ -85,5 +91,10 @@ due review.
   to install, and the timeout (R3-untested-status-mapping). 155 tests, analyze clean. "Entrando…"
   is new wording the design never needed. `ActionButton.onPressed` became nullable, which no
   existing caller notices.
+- **L7** — Evidence for T3: `booking_calendar` applied (recorded as `20261123000424`, the file
+  carries that name); a day blocked in December for the test appeared in its answer and was
+  removed; grants unchanged (anon, authenticated). The app's `BookingMonths.fromCalendar` on the
+  live answer: November 6 free days from the 23rd, December 27 from the 1st, opening on the 23rd.
+  168 tests, analyze clean.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.

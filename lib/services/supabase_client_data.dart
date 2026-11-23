@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/appointment_agenda.dart';
+import '../models/booking_months.dart';
 import '../models/booking.dart';
 import '../models/booking_form.dart';
 import '../models/catalog.dart';
@@ -53,9 +53,9 @@ class SupabaseClientData implements ClientData {
   /// A function rather than the tables: it answers with Cancún's "today" and "now", and with
   /// booked slots that carry no client.
   @override
-  Future<AppointmentAgenda> agenda() async {
+  Future<BookingMonths> agenda() async {
     final calendar = await _supabase.rpc<Map<String, dynamic>>('booking_calendar');
-    return AppointmentAgenda.fromCalendar(calendar);
+    return BookingMonths.fromCalendar(calendar);
   }
 
   /// The `client-book` function decides the slot, the total and the ticket, and answers with a

@@ -68,6 +68,49 @@ void main() {
     });
   });
 
+  group('AppointmentAgenda.fromCalendar, next month', () {
+    test('lays out the month after today, with no day of it past', () {
+      final december = AppointmentAgenda.fromCalendar(calendar(), monthsAhead: 1);
+
+      expect(december.monthName, 'Diciembre 2026');
+      expect(december.isoDate(1), '2026-12-01');
+      expect(december.daysInMonth, 31);
+      expect(december.weekdayOf(1), 2);
+      expect(december.freeSlotsFor(1), hasLength(16));
+      expect(december.shortDayLabel(1), 'Mar 1');
+    });
+
+    test('keeps blocked days and bookings in their own month', () {
+      final both = calendar(
+        blocked: ['2026-11-25', '2026-12-03'],
+        booked: [{'date': '2026-11-24', 'time': '12:00'}, {'date': '2026-12-24', 'time': '10:00'}],
+      );
+      final november = AppointmentAgenda.fromCalendar(both);
+      final december = AppointmentAgenda.fromCalendar(both, monthsAhead: 1);
+
+      expect(november.freeSlotsFor(3), isEmpty, reason: 'the 3rd of November is past');
+      expect(november.isFree(24, '10:00'), isTrue);
+      expect(december.freeSlotsFor(3), isEmpty);
+      expect(december.freeSlotsFor(25), hasLength(16));
+      expect(december.isFree(24, '10:00'), isFalse);
+      expect(december.isFree(24, '12:00'), isTrue);
+    });
+
+    test('rolls over into the next year', () {
+      final january = AppointmentAgenda.fromCalendar(calendar(today: '2026-12-20'), monthsAhead: 1);
+
+      expect(january.monthName, 'Enero 2027');
+      expect(january.isoDate(31), '2027-01-31');
+    });
+
+    test('offers no day outside the month', () {
+      final december = AppointmentAgenda.fromCalendar(calendar(), monthsAhead: 1);
+
+      expect(december.freeSlotsFor(0), isEmpty);
+      expect(december.freeSlotsFor(32), isEmpty);
+    });
+  });
+
   group('firstBookableDay', () {
     test('is the first free day after today', () {
       expect(AppointmentAgenda.fromCalendar(calendar()).firstBookableDay, 23);

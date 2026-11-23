@@ -18,29 +18,37 @@ class AppointmentAgenda {
     required this.bookedSlots,
   });
 
-  /// What `booking_calendar` answers: today and now, the weekly hours, and this month's blocked
-  /// days and booked slots from today on. Slots follow the panel's rule, every 30 minutes from
-  /// opening up to, but not including, closing; a weekday with no hours is closed.
-  factory AppointmentAgenda.fromCalendar(Map<String, dynamic> calendar) {
+  /// What `booking_calendar` answers: today and now, the weekly hours, and the blocked days and
+  /// booked slots from today to the end of next month. [monthsAhead] picks the month: 0 is the
+  /// current one, 1 the next, where no day is past and none is today. Slots follow the panel's
+  /// rule, every 30 minutes from opening up to, but not including, closing; a weekday with no
+  /// hours is closed.
+  factory AppointmentAgenda.fromCalendar(Map<String, dynamic> calendar, {int monthsAhead = 0}) {
     final today = DateTime.parse(calendar['today'] as String);
-    final month = dates.monthName(today.month);
+    final first = DateTime(today.year, today.month + monthsAhead);
+    bool inMonth(DateTime date) => date.year == first.year && date.month == first.month;
+    final month = dates.monthName(first.month);
     return AppointmentAgenda(
-      year: today.year,
-      month: today.month,
-      monthName: '${month[0].toUpperCase()}${month.substring(1)} ${today.year}',
+      year: first.year,
+      month: first.month,
+      monthName: '${month[0].toUpperCase()}${month.substring(1)} ${first.year}',
       monthLongName: month,
-      daysInMonth: DateTime(today.year, today.month + 1, 0).day,
-      firstWeekday: DateTime(today.year, today.month).weekday,
-      today: today.day,
+      daysInMonth: DateTime(first.year, first.month + 1, 0).day,
+      firstWeekday: first.weekday,
+      today: monthsAhead == 0 ? today.day : 0,
       nowTime: calendar['now'] as String,
       slotsByWeekday: {
         for (final hours in (calendar['weekly'] as List).cast<Map<String, dynamic>>())
           _weekdayNumbers[hours['weekday']]!: _slotsBetween(hours['opens_at'], hours['closes_at']),
       },
       blockedDays: {
-        for (final date in (calendar['blocked'] as List).cast<String>()) DateTime.parse(date).day,
+        for (final date in (calendar['blocked'] as List).cast<String>().map(DateTime.parse))
+          if (inMonth(date)) date.day,
       },
-      bookedSlots: _bookedByDay((calendar['booked'] as List).cast<Map<String, dynamic>>()),
+      bookedSlots: _bookedByDay([
+        for (final slot in (calendar['booked'] as List).cast<Map<String, dynamic>>())
+          if (inMonth(DateTime.parse(slot['date'] as String))) slot,
+      ]),
     );
   }
 
@@ -62,6 +70,7 @@ class AppointmentAgenda {
   final String monthLongName;
   final int daysInMonth;
   final int firstWeekday;
+  /// Today's day of this month; 0 in a month that has not started, where no day is past.
   final int today;
 
   /// Today's slots start after this time; one that has started is not free.
@@ -71,7 +80,7 @@ class AppointmentAgenda {
   final Map<int, List<String>> bookedSlots;
 
   List<String> freeSlotsFor(int day) {
-    if (day < today || blockedDays.contains(day)) return const [];
+    if (day < 1 || day > daysInMonth || day < today || blockedDays.contains(day)) return const [];
     final booked = bookedSlots[day] ?? const [];
     return [
       for (final slot in slotsByWeekday[weekdayOf(day)] ?? const <String>[])
