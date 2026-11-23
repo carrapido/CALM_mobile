@@ -45,6 +45,11 @@ class BookingSlotTaken extends BookingOutcome {
   const BookingSlotTaken();
 }
 
+/// Her session ended: the workshop no longer knows who she is, so she must sign in again.
+class BookingSignedOut extends BookingOutcome {
+  const BookingSignedOut();
+}
+
 /// Refused for a reason the client can act on, worded for her; [field] turns red when it is hers.
 class BookingRefused extends BookingOutcome {
   const BookingRefused(this.message, {this.field});

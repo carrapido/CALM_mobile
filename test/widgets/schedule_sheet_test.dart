@@ -278,6 +278,31 @@ void main() {
     expect(find.text('0937'), findsOneWidget);
   });
 
+  testWidgets('asks a client whose session ended to sign in again', (tester) async {
+    await openSheet(tester, data: FakeClientData(signedIn: true, bookingResult: const BookingSignedOut()));
+
+    await tester.tap(find.text('Confirmar · Jue 5, 11:00'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu sesión terminó. Vuelve a entrar.'), findsOneWidget);
+    expect(find.text('Volver a entrar'), findsOneWidget);
+    expect(find.text('Cita agendada'), findsNothing);
+  });
+
+  testWidgets('signs out and closes the sheet from "Volver a entrar"', (tester) async {
+    final data = FakeClientData(signedIn: true, bookingResult: const BookingSignedOut());
+    await openSheet(tester, data: data);
+    await tester.tap(find.text('Confirmar · Jue 5, 11:00'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Volver a entrar'));
+    await tester.pumpAndSettle();
+
+    expect(data.signOuts, 1);
+    expect(find.text('Agendar cita'), findsNothing);
+    expect(find.text('abrir hoja'), findsOneWidget);
+  });
+
   testWidgets('says when the agenda cannot load', (tester) async {
     await openSheet(tester, data: FakeClientData()..fails = true);
 

@@ -29,6 +29,10 @@ class AppConstants {
   static const String bookingPhoneWithoutNip =
       'Ese celular ya está registrado en el taller. Escríbele para que te dé tu NIP.';
   static const String bookingSlotTaken = 'Ese horario se acaba de ocupar. Elige otro.';
+
+  /// Her session ended while booking (odd/tasks/agendar-con-sesion.md S4).
+  static const String bookingSignedOut = 'Tu sesión terminó. Vuelve a entrar.';
+
   /// Answers to "Cancelar cita" and "Voy en camino" the workshop refused.
   static const String cancelRefused = 'Ya no se puede cancelar desde la app: escríbele al taller.';
   static const String onTheWayRefused =

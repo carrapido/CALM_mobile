@@ -1,5 +1,5 @@
 ---
-status: done
+status: in-progress
 ---
 
 # Agendar with an active session
@@ -18,6 +18,11 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   option: `client-book` accepts the session (valid JWT → the client linked to that auth user) and
   books for her without name, phone or NIP; the app hides "Tus datos" when there is a session.
   Without a session, booking behaves exactly as before (`acciones-cliente.md` S2–S4).
+- **S4** — Expired session, decision verbatim: "Backend avisa 401 y la app pide volver a entrar
+  (recomendado)" — "Si llega un token de usuario que no sirve, client-book contesta 401 con el
+  código 'signed_out' (como client-update-profile). La app cierra la sesión local y muestra \"Tu
+  sesión terminó. Vuelve a entrar.\". De paso: devolver refresh_token también con sesión, para no
+  romper apps viejas, y validar el pedido antes de consultar la sesión."
 
 ## Tasks
 
@@ -27,6 +32,13 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
 - [x] **T2** (S1–S3) — App: `ClientData.isSignedIn`; the Agendar sheet hides "Tus datos" and sends
   no contact data when signed in; `book()` installs a session only when the answer carries one.
   Route: inline, test-first (RED 2 failing, GREEN 170/170, analyze clean). Commit: this one.
+
+- [x] **T3** (S4) — CALM_web: a user bearer that names no client → 401 `signed_out`; the
+  refresh token comes back with a session too; the booking body is validated before the session
+  lookup. App: `BookingSignedOut`; the sheet shows "Tu sesión terminó. Vuelve a entrar." and a
+  "Volver a entrar" action that signs out and opens Entrada. Route: backend inline, app via
+  gentle-ai-worker (context backstop), test-first (RED 2, GREEN 172/172). Commit: CALM_web aafa07f;
+  app: this one.
 
 ## Log
 

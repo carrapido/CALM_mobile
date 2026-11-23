@@ -161,6 +161,7 @@ class SupabaseClientData implements ClientData {
   static BookingOutcome _bookingRefusalFor(int status, dynamic details) {
     final code = details is Map ? details['code'] : null;
     return switch ((status, code)) {
+      (401, 'signed_out') => const BookingSignedOut(),
       (401, _) => const BookingRefused(AppConstants.bookingWrongPair, field: BookingField.nip),
       (429, _) => const BookingRefused(AppConstants.signInThrottled),
       (409, 'slot_taken') => const BookingSlotTaken(),

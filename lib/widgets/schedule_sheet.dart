@@ -102,6 +102,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   String? _refusal;
   BookingField? _refusedField;
 
+  // Booking again cannot help once her session ended: she has to sign in first.
+  bool _hasSessionEnded = false;
+
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _nipController = TextEditingController();
@@ -306,8 +309,16 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
     final message = _refusal ?? (_showsProblem ? _currentProblem()?.message : null);
     return [
       if (message != null) FormAlert(message),
-      ActionButton.primary(label: 'Confirmar · $_summary', onPressed: _confirm),
+      _hasSessionEnded
+          ? ActionButton.primary(label: 'Volver a entrar', onPressed: _signInAgain)
+          : ActionButton.primary(label: 'Confirmar · $_summary', onPressed: _confirm),
     ];
+  }
+
+  Future<void> _signInAgain() async {
+    await ClientDataScope.of(context).signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
   }
 
   /// The form's own rules first; only complete data is worth a trip to the workshop.
@@ -354,6 +365,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
       case BookingRefused(:final message, :final field):
         _refusal = message;
         _refusedField = field;
+      case BookingSignedOut():
+        _refusal = AppConstants.bookingSignedOut;
+        _hasSessionEnded = true;
     }
   }
 
