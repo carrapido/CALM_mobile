@@ -20,8 +20,20 @@ class LoginForm {
 
   bool get hasCompletePhone => phoneDigits.length == phoneLength;
 
+  /// What a pair the workshop does not recognize reads as; the NIP label turns red.
+  static const mismatch = LoginProblem(
+    LoginField.nip,
+    'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.',
+  );
+
   /// One problem at a time, in the order the client fills the form; null when ready to sign in.
   LoginProblem? firstProblem({required bool credentialsMatch}) {
+    return incompleteProblem ?? (credentialsMatch ? null : mismatch);
+  }
+
+  /// The first of the form's own rules that is not met; null for a complete pair, whoever owns
+  /// it. Whether the pair matches is the workshop's call, not the form's.
+  LoginProblem? get incompleteProblem {
     final missingPhoneDigits = phoneLength - phoneDigits.length;
     if (missingPhoneDigits == phoneLength) {
       return const LoginProblem(LoginField.phone, 'Escribe tu celular a 10 dígitos.');
@@ -34,12 +46,6 @@ class LoginForm {
     }
     if (nip.length < nipLength) {
       return LoginProblem(LoginField.nip, 'Al NIP le ${_missingText(nipLength - nip.length)}.');
-    }
-    if (!credentialsMatch) {
-      return const LoginProblem(
-        LoginField.nip,
-        'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.',
-      );
     }
     return null;
   }

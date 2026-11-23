@@ -39,7 +39,7 @@ due review.
 
 - [x] **T0** (S1) — Merge both feature branches into `main`; push calm_mobil (`1468610`).
 - [x] **T1** (S7, S9) — Rotate María's NIP; remove working NIPs from the docs.
-- [ ] **T2** (S7) — Sign-in findings: parse before installing the session, timeout, disabled
+- [x] **T2** (S7) — Sign-in findings: parse before installing the session, timeout, disabled
       button while waiting, outcome ignored when the form changed, mapping tests, named form API.
 - [ ] **T3** (S6) — `booking_calendar` covers this month and the next; the sheet navigates ‹ ›.
 - [ ] **T4** (S5) — One SELECT policy per table and role.
@@ -72,5 +72,18 @@ due review.
   nothing. R2-stale-spec-line-reference fixed in the same pass. R2-unrelated-gitignore-entry kept
   as is: `.pi/` still keeps the local MCP config out of git, and the published history is not
   rewritten.
+- **L6** — T2 closes eight sign-in findings. The session is installed last, once the answer is
+  known to carry a refresh token, and the unused client payload is no longer parsed
+  (R2-unused-client-payload-parsing, R3-partial-session-on-parse-failure,
+  R4-session-installed-before-parse); the call gives up after 15 s as unavailable and the button
+  reads "Entrando…" disabled meanwhile (R4-signin-no-timeout-stuck-guard,
+  R2-isSigningIn-setState-without-ui); a refusal for a pair edited meanwhile is dropped while a
+  granted sign-in still goes on, its session being installed (R3-stale-answer-after-edit);
+  `LoginForm.incompleteProblem` and `LoginForm.mismatch` replace the double `firstProblem` call
+  (R2-credentialsMatch-true-trick); `SupabaseClientAccess.using` takes stand-ins, and nine unit
+  tests cover 401, 429, other statuses, no network, answers without a token, a session that fails
+  to install, and the timeout (R3-untested-status-mapping). 155 tests, analyze clean. "Entrando…"
+  is new wording the design never needed. `ActionButton.onPressed` became nullable, which no
+  existing caller notices.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.

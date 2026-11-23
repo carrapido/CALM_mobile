@@ -6,23 +6,13 @@ abstract interface class ClientAccess {
   Future<SignInOutcome> signIn({required String phoneDigits, required String nip});
 }
 
-/// The client the backend let in.
-class SignedInClient {
-  const SignedInClient({required this.id, required this.name, required this.phone});
-
-  final int id;
-  final String name;
-  final String phone;
-}
-
 sealed class SignInOutcome {
   const SignInOutcome();
 }
 
+/// Her session is installed on this device; the screens read who she is from the backend.
 class SignInGranted extends SignInOutcome {
-  const SignInGranted(this.client);
-
-  final SignedInClient client;
+  const SignInGranted();
 }
 
 /// The pair does not open anything. An unknown phone and a wrong NIP are the same answer, so a

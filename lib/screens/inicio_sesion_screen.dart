@@ -42,6 +42,9 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   bool _isSigningIn = false;
   bool _hadCompletePhone = false;
 
+  // Counts edits, so an answer for a pair the client has since changed is recognized as stale.
+  int _formVersion = 0;
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -73,7 +76,10 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
                     _credentialsGroup(_invalidField),
                     if (_message != null) _ProblemMessage(_message!),
                     const SizedBox(height: 20),
-                    ActionButton.primary(label: AppConstants.btnVerPedidos, onPressed: _signIn),
+                    ActionButton.primary(
+                      label: _isSigningIn ? AppConstants.btnEntrando : AppConstants.btnVerPedidos,
+                      onPressed: _isSigningIn ? null : _signIn,
+                    ),
                     const SizedBox(height: 4),
                     _ForgotNipButton(onPressed: _openHelp),
                     const Spacer(),
@@ -136,6 +142,7 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   }
 
   void _hideMessage() {
+    _formVersion++;
     if (_message == null) return;
     setState(() {
       _message = null;
@@ -147,28 +154,29 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   Future<void> _signIn() async {
     if (_isSigningIn) return;
     final form = LoginForm(phone: _phoneController.text, nip: _nipController.text);
-    // The pair itself is the backend's to judge, so the local check is told it matches.
-    final incomplete = form.firstProblem(credentialsMatch: true);
-    if (incomplete != null) {
-      _show(incomplete.message, field: incomplete.field);
+    if (form.incompleteProblem case final problem?) {
+      _show(problem.message, field: problem.field);
       return;
     }
 
+    final submittedVersion = _formVersion;
     setState(() => _isSigningIn = true);
     final outcome = await _access.signIn(phoneDigits: form.phoneDigits, nip: form.nip);
     if (!mounted) return;
     setState(() => _isSigningIn = false);
-    _answer(outcome, form);
+    // A refusal speaks of the pair she sent; once she has edited it, it would blame what she
+    // typed since. A granted sign-in still counts: her session is already installed.
+    final isStale = submittedVersion != _formVersion && outcome is! SignInGranted;
+    if (!isStale) _answer(outcome);
   }
 
-  void _answer(SignInOutcome outcome, LoginForm form) {
+  void _answer(SignInOutcome outcome) {
     switch (outcome) {
       case SignInGranted():
         Navigator.of(context).pushReplacementNamed(AppRoutes.orders);
       case SignInRejected():
         // The wording of a wrong pair belongs to the form, so it reads the same as ever.
-        final mismatch = form.firstProblem(credentialsMatch: false)!;
-        _show(mismatch.message, field: mismatch.field);
+        _show(LoginForm.mismatch.message, field: LoginForm.mismatch.field);
       case SignInThrottled():
         _show(AppConstants.signInThrottled);
       case SignInUnavailable():
