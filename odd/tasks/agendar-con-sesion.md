@@ -23,6 +23,10 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   código 'signed_out' (como client-update-profile). La app cierra la sesión local y muestra \"Tu
   sesión terminó. Vuelve a entrar.\". De paso: devolver refresh_token también con sesión, para no
   romper apps viejas, y validar el pedido antes de consultar la sesión."
+- **S5** — Security, verbatim: "Resuelve los problemas criticos de seguridad, y checa los PR".
+  The critical item is review finding R1-session-refresh-mint: client-book must not mint a refresh
+  token from an access token alone. Contact data (phone + NIP) takes the guest path and is the only
+  way to receive a refresh token; the session path is used only without contact and returns none.
 
 ## Tasks
 
@@ -39,6 +43,8 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   "Volver a entrar" action that signs out and opens Entrada. Route: backend inline, app via
   gentle-ai-worker (context backstop), test-first (RED 2, GREEN 172/172). Commit: CALM_web aafa07f;
   app: this one.
+- [x] **T4** (S5) — CALM_web: `bookerOf` tries the typed contact first, then the session; the
+  refresh token is minted only on the contact path. Route: inline. Commit: CALM_web 6341467.
 
 ## Log
 
@@ -69,3 +75,10 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   `client-book` v7; both branches pushed. Live checks without writes: anon/garbage without contact
   → 400; unverifiable user token without contact → 401 signed_out; with contact → guest path (409
   on a past slot); invalid body → 400 first; no client created.
+- **L7** — T4: independent verify S3–S5 met (runtime probe with a Supabase mock: session without
+  contact → 200 with no refresh_token and no generate_link/verify; session + wrong NIP → 401; guests
+  no longer call auth.getUser). Native review of CALM_web main..6341467 approved; the risk lens raised
+  nothing (R1 resolved). Open advisories: a transient auth failure reads as signed_out; no runtime
+  tests for functions; invalid contact with a session is ignored instead of 400. Deployed
+  `client-book` v8; pushed. Live checks without writes as in L6, no client created. No PR exists yet
+  for either branch.
