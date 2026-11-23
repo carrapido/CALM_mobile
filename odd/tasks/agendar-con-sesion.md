@@ -42,3 +42,10 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
 - **L4** — Independent verify (gentle-ai-verify): S1–S3 met, no blockers; flutter analyze clean,
   170/170 tests, deno check OK. Advisory: an expired or unlinked session hides "Tus datos" and the
   server answers 400. `client-book` not deployed yet (not authorized).
+- **L5** — User: "despliegalo, haz el push de las ramas y prueba la rama, despues de que hagas eso
+  decidimos que hacer cuando la sesión vence". Deployed `client-book` v6 (verify_jwt false; v5 was
+  identical to CALM_web main). Native review of CALM_web approved (risk + reliability; 4 advisory
+  findings, incl. expired session → generic 400 and no runtime test of the session branch). Both
+  branches pushed. Live checks without writes: anon key or invalid token without contact → 400
+  "Revisa los datos de tu cita."; guest with contact and a past slot → 409 slot_taken, no client
+  created. Signed-in path not exercised live (needs a real client session).
