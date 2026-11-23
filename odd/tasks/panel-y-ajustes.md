@@ -48,10 +48,13 @@ due review.
 - [x] **T1 commit** — `f4e5d16`; **T2** — `be5a019`.
 - [x] **T3** (S6, S10) — `booking_calendar` covers this month and the next; the sheet navigates ‹ ›.
       CALM_web `b633ff8`.
-- [ ] **T4** (S5) — One SELECT policy per table and role.
-- [ ] **T5** (S2) — `admin-enroll-client` function and the panel's Clientes page.
-- [ ] **T6** (S4) — `database.types.ts` regenerated.
-- [ ] **T7** (S3) — Leaked password protection on.
+- [x] **T3 commit** — `879c44b`.
+- [x] **T4** (S5) — One SELECT policy per table and role. CALM_web `82957f1`.
+- [ ] **T5** (S2) — `admin-enroll-client` function and the panel's Clientes page. Backend done:
+      CALM_web `c7db5cb`; the page is CALM_web `odd/tasks/panel-clientes.md` T1.
+- [x] **T6** (S4) — `database.types.ts` regenerated. CALM_web `83d7017`.
+- [ ] **T7** (S3) — Leaked password protection on. Blocked: a dashboard switch the Supabase MCP
+      cannot reach (Auth → Providers → Email → "Prevent use of leaked passwords").
 
 ## Log
 
@@ -96,5 +99,25 @@ due review.
   removed; grants unchanged (anon, authenticated). The app's `BookingMonths.fromCalendar` on the
   live answer: November 6 free days from the 23rd, December 27 from the 1st, opening on the 23rd.
   168 tests, analyze clean.
+- **L8** — Evidence for T4: CALM_web's `access-check.sql` failed 2 of 35 on the live project
+  before any change, because it predated the public catalog. Brought up to the rules as they
+  stand, with a signed-in client who must read exactly her own rows (1 client, 1 appointment, 2
+  appointment services, 1 order) and deactivated services read only by the admin and by the client
+  who booked one, it passed 51 checks on the old policies and 51 on the consolidated ones. The
+  advisor's `multiple_permissive_policies` is gone. The app's live journey passed 14 of 14 again;
+  its test client was removed (a first cleanup ran in parallel with the journey and missed it, the
+  second removed it), and the project is back to 7 clients, 4 appointments, 5 auth users.
+- **L9** — Evidence for T5's backend (live project): with a temporary admin created for the test
+  (password only in a `/tmp` file, deleted with her afterwards), `admin-enroll-client` answered
+  no session and a client's session 403; bad phone, NIP or name 400; another client's phone 409;
+  a new client 200, who then signed in; an existing client's NIP and phone reset 200, the new
+  pair signing in and the old one refused, her auth alias renamed; an unknown client 404.
+  `has_app_access` reads true or false and no response carries `nip_hash`. The project is back to
+  7 clients, 4 appointments, 5 auth users, 1 admin.
+- **L10** — T6: the regenerated types differ only by `sign_in_attempts` and the functions
+  `booking_calendar`, `cancel_my_appointment`, `mark_on_my_way` and `has_app_access`; formatted
+  like the file they replace. `tsc -b` clean, 22 files and 130 tests pass.
+- **L11** — Subagents work again: the explorer mapped the panel's conventions, and the Clientes
+  page is delegated to a worker against CALM_web `odd/tasks/panel-clientes.md`.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.
