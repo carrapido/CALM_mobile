@@ -12,6 +12,7 @@ const readyOrder = Order(
   work: 'Cambio de cierre de chamarra',
   status: OrderStatus.ready,
   amountMxn: 150,
+  scheduledDay: 'martes 17 de noviembre',
 );
 const inProgressOrder = Order(
   ticket: '5512',
@@ -25,6 +26,8 @@ const appointment = Order(
   status: OrderStatus.appointment,
   amountMxn: 180,
   appointmentOn: 'jueves 5 a las 11:00',
+  scheduledDay: 'jueves 5 de noviembre',
+  scheduledTime: '11:00',
 );
 const lateNoticeText = 'Faltan menos de 24 horas para tu cita: para cancelarla, escríbele al taller.';
 
@@ -149,6 +152,31 @@ void main() {
     expect(find.text('Entregado'), findsNothing);
   });
 
+  testWidgets('shows the day and time of an appointment', (tester) async {
+    await pumpDetail(tester, appointment);
+
+    for (final text in ['Tu cita', 'Fecha', 'jueves 5 de noviembre', 'Hora', '11:00']) {
+      expect(find.text(text), findsOneWidget, reason: text);
+    }
+    expect(find.text('Entrega'), findsNothing);
+  });
+
+  testWidgets('shows the delivery day of an order, with no time', (tester) async {
+    await pumpDetail(tester, readyOrder);
+
+    for (final text in ['Entrega', 'Fecha', 'martes 17 de noviembre']) {
+      expect(find.text(text), findsOneWidget, reason: text);
+    }
+    expect(find.text('Hora'), findsNothing);
+  });
+
+  testWidgets('leaves out the dates section when the order has no date', (tester) async {
+    await pumpDetail(tester, inProgressOrder);
+
+    expect(find.text('Fecha'), findsNothing);
+    expect(find.text('Hora'), findsNothing);
+  });
+
   testWidgets('keeps the appointment when the client changes their mind', (tester) async {
     await pumpDetail(tester, appointment);
 
@@ -241,6 +269,10 @@ void main() {
 }
 
 Future<void> pumpDetail(WidgetTester tester, Order order, {FakeClientData? data}) async {
+  // Tall enough for every section without scrolling.
+  tester.view.physicalSize = const Size(390, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(withClientData(data: data,
     MaterialApp(
       initialRoute: '${AppRoutes.orders}/detalle',

@@ -104,7 +104,7 @@ void main() {
     await tester.tap(find.text('Ver mi cita'));
     await tester.pumpAndSettle();
 
-    expect(find.text('detalle 0937 Cita agendada'), findsOneWidget);
+    expect(find.text('detalle 0937 Cita agendada jueves 5 de noviembre 11:00'), findsOneWidget);
   });
 
   testWidgets('closes with Cancelar', (tester) async {
@@ -328,7 +328,7 @@ Future<void> openSheet(WidgetTester tester, {FakeClientData? data}) async {
             ),
         AppRoutes.order: (context) {
           final order = ModalRoute.of(context)!.settings.arguments! as Order;
-          return Text('detalle ${order.ticket} ${order.status.headline}');
+          return Text('detalle ${order.ticket} ${order.status.headline} ${order.scheduledDay} ${order.scheduledTime}');
         },
       },
     ),

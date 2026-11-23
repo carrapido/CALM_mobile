@@ -53,10 +53,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           progress: _order.isAppointment ? null : _order.status,
           actions: _actions(),
         ),
+        ..._schedule(),
         SectionHeader(_order.isAppointment ? 'Cotización' : 'Pago'),
-        _AmountRow(
-          label: _order.isAppointment ? 'Cotización preliminar' : 'Total, se paga en el taller',
-          amount: _order.formattedAmount,
+        InsetGroup(
+          children: [
+            _DetailRow(
+              label: _order.isAppointment ? 'Cotización preliminar' : 'Total, se paga en el taller',
+              value: _order.formattedAmount,
+            ),
+          ],
         ),
         ..._cancellation(),
         const SectionHeader('Más'),
@@ -71,6 +76,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
       ],
     );
+  }
+
+  // When she is expected: the appointment's day and time, or the order's delivery day.
+  List<Widget> _schedule() {
+    final day = _order.scheduledDay;
+    if (day == null) return const [];
+    return [
+      SectionHeader(_order.isAppointment ? 'Tu cita' : 'Entrega'),
+      InsetGroup(
+        children: [
+          _DetailRow(label: 'Fecha', value: day),
+          if (_order.scheduledTime case final time?) _DetailRow(label: 'Hora', value: time),
+        ],
+      ),
+    ];
   }
 
   String _headline() {
@@ -289,31 +309,35 @@ class _Step extends StatelessWidget {
   }
 }
 
-class _AmountRow extends StatelessWidget {
-  const _AmountRow({required this.label, required this.amount});
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
 
   final String label;
-  final String amount;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return InsetGroup(
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 52),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(label, style: AppText.body.copyWith(fontWeight: FontWeight.w500)),
-                ),
-                Text(amount, style: AppText.body.copyWith(fontWeight: FontWeight.w800)),
-              ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          spacing: 12,
+          children: [
+            Expanded(
+              child: Text(label, style: AppText.body.copyWith(fontWeight: FontWeight.w500)),
             ),
-          ),
+            // A long day wraps instead of pushing the row off a narrow phone.
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: AppText.body.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

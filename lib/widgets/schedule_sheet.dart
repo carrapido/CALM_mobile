@@ -409,6 +409,8 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
       status: OrderStatus.appointment,
       amountMxn: widget.selection.totalMxn,
       appointmentOn: '${_agenda.weekdayAndDay(_day)} a las $_time',
+      scheduledDay: '${_agenda.weekdayAndDay(_day)} de ${_agenda.monthLongName}',
+      scheduledTime: _time,
     );
     Navigator.of(context)
       ..pop()
