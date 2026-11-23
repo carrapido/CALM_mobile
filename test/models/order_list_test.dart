@@ -78,6 +78,13 @@ void main() {
       expect(listFrom(orders: [orderRow(status: 'cancelled')]), isEmpty);
     });
 
+    test('words an order\'s delivery day, with no time', () {
+      final order = listFrom(orders: [orderRow(deliveryDate: '2026-11-17')]).single;
+
+      expect(order.scheduledDay, 'martes 17 de noviembre');
+      expect(order.scheduledTime, isNull);
+    });
+
     test('words a delivered order with its delivery date', () {
       final order = listFrom(orders: [orderRow(status: 'delivered', deliveryDate: '2026-11-13')]).single;
 
@@ -92,6 +99,8 @@ void main() {
       expect(appointment.work, 'Dobladillo de pantalón, Cambio de cierre');
       expect(appointment.formattedAmount, r'$230 MXN');
       expect(appointment.appointmentOn, 'jueves 26 a las 11:00');
+      expect(appointment.scheduledDay, 'jueves 26 de noviembre');
+      expect(appointment.scheduledTime, '11:00');
     });
 
     test('leaves out an appointment that already became an order', () {

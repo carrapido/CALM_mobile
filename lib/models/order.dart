@@ -23,6 +23,8 @@ class Order {
     required this.amountMxn,
     this.appointmentOn,
     this.deliveredOn,
+    this.scheduledDay,
+    this.scheduledTime,
     this.isCancellable = true,
   });
 
@@ -34,6 +36,12 @@ class Order {
   /// Day and time of the appointment, worded as "jueves 5 a las 11:00".
   final String? appointmentOn;
   final String? deliveredOn;
+
+  /// The appointment's day, or an order's delivery day, worded as "viernes 28 de noviembre".
+  final String? scheduledDay;
+
+  /// The appointment's time, "15:30"; an order is delivered on a day, with no time.
+  final String? scheduledTime;
 
   /// An appointment can be cancelled until 24 hours before it.
   final bool isCancellable;
@@ -95,6 +103,7 @@ class _ListedOrder {
       status: status,
       amountMxn: row['final_price_mxn'] as int,
       deliveredOn: status == OrderStatus.delivered ? dayAndMonth(deliveryDate) : null,
+      scheduledDay: '${weekdayName(deliveryDate)} ${dayAndMonth(deliveryDate)}',
     );
     return _ListedOrder(order, deliveryDate);
   }
@@ -107,6 +116,8 @@ class _ListedOrder {
       status: OrderStatus.appointment,
       amountMxn: row['preliminary_total_mxn'] as int,
       appointmentOn: '${weekdayName(start)} ${start.day} a las ${clockTime(start)}',
+      scheduledDay: '${weekdayName(start)} ${dayAndMonth(start)}',
+      scheduledTime: clockTime(start),
       isCancellable: start.difference(now) > const Duration(hours: 24),
     );
     return _ListedOrder(order, start);
