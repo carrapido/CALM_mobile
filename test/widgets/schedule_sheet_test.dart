@@ -143,9 +143,9 @@ void main() {
     await confirmWithData(tester);
 
     final booking = data.bookings.single;
-    expect(booking.name, 'Ana López');
-    expect(booking.phoneDigits, '9981234567');
-    expect(booking.nip, '1357');
+    expect(booking.contact?.name, 'Ana López');
+    expect(booking.contact?.phoneDigits, '9981234567');
+    expect(booking.contact?.nip, '1357');
     expect(booking.date, '2026-11-05');
     expect(booking.time, '11:00');
     expect(booking.selection.services.map((service) => service.id), ['waist']);
@@ -252,6 +252,30 @@ void main() {
 
     expect(find.text('Diciembre 2026'), findsOneWidget);
     expect(find.text('Confirmar · Mar 1, 11:00'), findsOneWidget);
+  });
+
+  testWidgets('does not ask a signed-in client for her name, phone and NIP', (tester) async {
+    await openSheet(tester, data: FakeClientData(signedIn: true));
+
+    expect(find.text('Tus datos'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('Con este celular y tu NIP'), findsNothing);
+    expect(find.text('Confirmar · Jue 5, 11:00'), findsOneWidget);
+  });
+
+  testWidgets('books for a signed-in client without contact data', (tester) async {
+    final data = FakeClientData(signedIn: true);
+    await openSheet(tester, data: data);
+
+    await tester.tap(find.text('Confirmar · Jue 5, 11:00'));
+    await tester.pumpAndSettle();
+
+    final booking = data.bookings.single;
+    expect(booking.contact, isNull);
+    expect(booking.date, '2026-11-05');
+    expect(booking.time, '11:00');
+    expect(find.text('Cita agendada'), findsOneWidget);
+    expect(find.text('0937'), findsOneWidget);
   });
 
   testWidgets('says when the agenda cannot load', (tester) async {
