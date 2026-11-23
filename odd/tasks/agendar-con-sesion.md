@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 ---
 
 # Agendar with an active session
@@ -39,3 +39,6 @@ A signed-in client books without typing her name, phone and NIP again. Builds on
   (`verify_jwt: false`) always required name, phone and a 4-digit NIP and never read the session.
 - **L3** — User: "eligo la opción uno, que se encargue el backend. Te doy el permiso para
   editarlo" (edit of `../CALM_web` authorized; deploy not yet authorized).
+- **L4** — Independent verify (gentle-ai-verify): S1–S3 met, no blockers; flutter analyze clean,
+  170/170 tests, deno check OK. Advisory: an expired or unlinked session hides "Tus datos" and the
+  server answers 400. `client-book` not deployed yet (not authorized).
