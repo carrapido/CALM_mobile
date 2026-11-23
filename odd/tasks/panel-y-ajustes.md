@@ -124,5 +124,21 @@ due review.
   orchestrator with the real adapter: a client registered from the panel signs in to the app, and
   after a reset from the panel the new pair signs in and the old one does not. Details in CALM_web
   `odd/tasks/panel-clientes.md` L3, including a first run spoiled by a cleanup run in parallel.
+- **L13** — CALM_web review `review-a5346d502e5ebea2` reached its refuter once the user set a
+  working model, and ended `correction_required` with three CRITICAL findings that agree
+  (R1-001, R3-001, R4-throttle-lost-update): the per-phone NIP throttle read the lockout and
+  counted failures non-atomically, so a burst of concurrent wrong NIPs passed it and the 4-digit
+  NIP could be enumerated; it also failed open on a read error. The earlier verification had only
+  ever sent attempts one by one. Fixed by `claim_nip_attempt`, one atomic INSERT ... ON CONFLICT
+  that counts each NIP check before it runs (five per phone, then fifteen minutes) and fails
+  closed; applied as `20261123003745` and deployed (client-sign-in v4, client-book v2,
+  client-update-profile v2, admin-enroll-client v2). Thirty concurrent wrong NIPs then got exactly
+  5 answers of 401 and 25 of 429; the right NIP was refused while locked and accepted after the
+  lockout expired. The correction (CALM_web `49c0710`, 104 diff lines, as planned) added a file, so
+  the provider moved it to `scope_changed`; with the user's authorization it was recovered to
+  `review-46d77fb6d64f5695`, which approved it and was acknowledged. That slice is pushed
+  (`0222584..49c0710`). Seventeen non-blocking findings came with it, for later work. During the
+  checks a verification step was again run in parallel with the step it depended on, twice; both
+  times the result was discarded and the step rerun alone.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.
