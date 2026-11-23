@@ -16,7 +16,9 @@ class ActionButton extends StatelessWidget {
         _foreground = AppColors.ink;
 
   final String label;
-  final VoidCallback onPressed;
+
+  /// Null disables the button, as while what it started is still under way.
+  final VoidCallback? onPressed;
   final IconData? icon;
   final Color _background;
   final Color _foreground;

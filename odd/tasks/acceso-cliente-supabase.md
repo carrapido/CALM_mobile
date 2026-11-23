@@ -29,7 +29,8 @@ This delivery covers sign-in only; the screens keep their mock data until the ne
   the source of `credentialsMatch` changes, from `DemoClientAccess` to the backend.
 - **S6** — A failed attempt must not tell the attacker which half was wrong: an unknown phone and a
   wrong NIP produce the same answer and the same message, as S5 already words it.
-- **S7** — Sign-in attempts are throttled per phone. `demo_client_access.dart:7` already states the
+- **S7** — Sign-in attempts are throttled per phone. The demo stand-in this batch replaced
+  (`lib/models/demo_client_access.dart` before commit `3b06bda`, since removed) stated the
   requirement: "The real check belongs to the API, which must throttle NIP attempts per phone."
 - **S8** — A signed-in client reaches only her own data. Today every RLS policy on the eight tables
   is `private.is_admin()`; the client needs her own policies, never a relaxation of the admin ones.
@@ -76,7 +77,7 @@ This delivery covers sign-in only; the screens keep their mock data until the ne
 - **L5** — User constraint: "no dejes ningun secreto en el repo".
 - **L7** — Verification of the delivered sign-in, against the live project.
   Rejection: an unknown phone and a wrong NIP both answer HTTP 401 with the same body; a
-  malformed pair answers 400. Success: `998 123 4567` + `2580` answers HTTP 200 with a session;
+  malformed pair answers 400. Success: María's phone and NIP answer HTTP 200 with a session;
   `auth.users` went from 1 to 2, the account was created once and reused across three sign-ins,
   and `clients.user_id` of client 2 points at `9981234567@clients.calm.app`.
   Row level security with that session: `clients` returns exactly her own row, while `orders`,

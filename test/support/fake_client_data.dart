@@ -1,5 +1,6 @@
 import 'package:calm_mobil/models/appointment_agenda.dart';
 import 'package:calm_mobil/models/booking.dart';
+import 'package:calm_mobil/models/booking_months.dart';
 import 'package:calm_mobil/models/catalog.dart';
 import 'package:calm_mobil/models/client_action.dart';
 import 'package:calm_mobil/models/order.dart';
@@ -67,6 +68,29 @@ const demoAgenda = AppointmentAgenda(
   },
 );
 
+/// The month after [demoAgenda]: December 2026 starts on a Tuesday, Sundays closed.
+const demoNextAgenda = AppointmentAgenda(
+  year: 2026,
+  month: 12,
+  monthName: 'Diciembre 2026',
+  monthLongName: 'diciembre',
+  daysInMonth: 31,
+  firstWeekday: 2,
+  today: 0,
+  nowTime: '15:00',
+  slotsByWeekday: {
+    1: _businessSlots,
+    2: _businessSlots,
+    3: _businessSlots,
+    4: _businessSlots,
+    5: _businessSlots,
+    6: _businessSlots,
+    7: [],
+  },
+  blockedDays: {},
+  bookedSlots: {},
+);
+
 const _businessSlots = [
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
@@ -81,7 +105,7 @@ class FakeClientData implements ClientData {
     this.catalogResult = demoCatalog,
     this.ordersResult = demoOrders,
     this.profileResult = demoProfile,
-    this.agendaResult = demoAgenda,
+    this.agendaResult = const BookingMonths([demoAgenda]),
     this.bookingResult = const BookingConfirmed('0937'),
     this.actionResult = const ActionDone(),
     this.profileSaveResult,
@@ -90,7 +114,7 @@ class FakeClientData implements ClientData {
   Catalog catalogResult;
   List<Order> ordersResult;
   UserProfile profileResult;
-  AppointmentAgenda agendaResult;
+  BookingMonths agendaResult;
   BookingOutcome bookingResult;
   final bookings = <BookingRequest>[];
   ClientActionOutcome actionResult;
@@ -114,7 +138,7 @@ class FakeClientData implements ClientData {
   Future<UserProfile> profile() => _answer(profileResult);
 
   @override
-  Future<AppointmentAgenda> agenda() => _answer(agendaResult);
+  Future<BookingMonths> agenda() => _answer(agendaResult);
 
   @override
   Future<BookingOutcome> book(BookingRequest request) async {

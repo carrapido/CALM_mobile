@@ -150,6 +150,43 @@ void main() {
     expect(find.text(ordersDestination), findsNothing);
   });
 
+  testWidgets('waits on one sign-in at a time, with the button disabled', (tester) async {
+    final access = FakeClientAccess(holdsAnswer: true);
+    await pumpEntrada(tester, access: access);
+
+    await tester.enterText(phoneField, '9981234567');
+    await tester.enterText(nipField, '2580');
+    await tester.tap(submitButton);
+    await tester.pump();
+
+    expect(find.text('Entrando…'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(access.calls, hasLength(1));
+
+    access.answer(const SignInGranted());
+    await tester.pumpAndSettle();
+    expect(find.text(ordersDestination), findsOneWidget);
+  });
+
+  testWidgets('drops a refusal for a pair the client changed meanwhile', (tester) async {
+    final access = FakeClientAccess(holdsAnswer: true);
+    await pumpEntrada(tester, access: access);
+    await tester.enterText(phoneField, '9981234567');
+    await tester.enterText(nipField, '1111');
+    await tester.tap(submitButton);
+    await tester.pump();
+
+    await tester.enterText(nipField, '2580');
+    access.answer(const SignInRejected());
+    await tester.pumpAndSettle();
+
+    expect(find.text(mismatchMessage), findsNothing);
+    expect(labelColor(tester, 'NIP'), AppColors.ink);
+    expect(find.text('Ver mis pedidos'), findsOneWidget);
+  });
+
   testWidgets('hides a backend message as soon as a field changes', (tester) async {
     await pumpEntrada(tester, access: FakeClientAccess(outcome: const SignInUnavailable()));
     await signIn(tester, phone: '9981234567', nip: '2580');

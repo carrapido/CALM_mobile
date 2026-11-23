@@ -1,6 +1,7 @@
 import 'package:calm_mobil/models/appointment_agenda.dart';
 import 'package:calm_mobil/models/booking.dart';
 import 'package:calm_mobil/models/booking_form.dart';
+import 'package:calm_mobil/models/booking_months.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/service_selection.dart';
@@ -129,7 +130,7 @@ void main() {
       blockedDays: {},
       bookedSlots: {},
     );
-    await openSheet(tester, data: FakeClientData(agendaResult: full));
+    await openSheet(tester, data: FakeClientData(agendaResult: const BookingMonths([full])));
 
     expect(find.text('Ya no quedan horarios libres este mes. Escríbele al taller.'), findsOneWidget);
     expect(find.textContaining('Confirmar'), findsNothing);
@@ -193,6 +194,66 @@ void main() {
     expect(find.text('Confirmar · Jue 5, 10:30'), findsOneWidget);
   });
 
+  testWidgets('moves to the next month and back', (tester) async {
+    await openSheet(tester, data: FakeClientData(agendaResult: const BookingMonths([demoAgenda, demoNextAgenda])));
+
+    await tester.tap(find.byTooltip('Mes siguiente'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diciembre 2026'), findsOneWidget);
+    expect(find.text('Confirmar · Mar 1, 11:00'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Mes anterior'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Noviembre 2026'), findsOneWidget);
+    expect(find.text('Confirmar · Jue 5, 11:00'), findsOneWidget);
+  });
+
+  testWidgets('goes no further than the months the workshop offers', (tester) async {
+    await openSheet(tester);
+
+    expect(arrow(tester, 'Mes anterior').onPressed, isNull);
+    expect(arrow(tester, 'Mes siguiente').onPressed, isNull);
+  });
+
+  testWidgets('books a day of the next month with its own date', (tester) async {
+    final data = FakeClientData(agendaResult: const BookingMonths([demoAgenda, demoNextAgenda]));
+    await openSheet(tester, data: data);
+    await tester.tap(find.byTooltip('Mes siguiente'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Ana López');
+    await tester.enterText(fields.at(1), '9981234567');
+    await tester.enterText(fields.at(2), '1357');
+    await tester.tap(find.text('Confirmar · Mar 1, 11:00'));
+    await tester.pumpAndSettle();
+
+    expect(data.bookings.single.date, '2026-12-01');
+    expect(data.bookings.single.time, '11:00');
+  });
+
+  testWidgets('opens on the next month when this one has no later free day', (tester) async {
+    const lastDay = AppointmentAgenda(
+      year: 2026,
+      month: 11,
+      monthName: 'Noviembre 2026',
+      monthLongName: 'noviembre',
+      daysInMonth: 30,
+      firstWeekday: 7,
+      today: 30,
+      nowTime: '09:00',
+      slotsByWeekday: {1: ['10:00', '10:30']},
+      blockedDays: {},
+      bookedSlots: {},
+    );
+    await openSheet(tester, data: FakeClientData(agendaResult: const BookingMonths([lastDay, demoNextAgenda])));
+
+    expect(find.text('Diciembre 2026'), findsOneWidget);
+    expect(find.text('Confirmar · Mar 1, 11:00'), findsOneWidget);
+  });
+
   testWidgets('says when the agenda cannot load', (tester) async {
     await openSheet(tester, data: FakeClientData()..fails = true);
 
@@ -225,6 +286,10 @@ Future<void> openSheet(WidgetTester tester, {FakeClientData? data}) async {
   ));
   await tester.tap(find.text('abrir hoja'));
   await tester.pumpAndSettle();
+}
+
+IconButton arrow(WidgetTester tester, String tooltip) {
+  return tester.widget<IconButton>(find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton)).first);
 }
 
 Future<void> confirmWithData(WidgetTester tester) async {

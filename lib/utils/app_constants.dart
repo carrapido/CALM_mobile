@@ -10,6 +10,7 @@ class AppConstants {
   static const String hintNip = '4 dígitos';
   static const String btnVerPedidos = 'Ver mis pedidos';
   static const String btnOlvideNip = 'Olvidé mi NIP';
+  static const String btnEntrando = 'Entrando…';
 
   /// Sign-in answers that are not about what the client typed.
   static const String signInThrottled =

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../models/appointment_agenda.dart';
 import '../models/booking.dart';
+import '../models/booking_months.dart';
 import '../models/booking_form.dart';
 import '../models/field_problem.dart';
 import '../models/login_form.dart';
@@ -37,17 +38,17 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     sheetAnimationStyle: sheetMotion(context),
-    builder: (sheetContext) => Loaded<AppointmentAgenda>(
+    builder: (sheetContext) => Loaded<BookingMonths>(
       load: ClientDataScope.of(sheetContext).agenda,
       pending: (status) => Padding(padding: const EdgeInsets.all(16), child: status),
-      builder: (_, agenda) => agenda.firstBookableDay == null
+      builder: (_, months) => months.opening == null
           ? const _NoFreeSlots()
-          : ScheduleSheet(selection: selection, agenda: agenda),
+          : ScheduleSheet(selection: selection, months: months),
     ),
   );
 }
 
-/// The month the agenda covers has no free slot left.
+/// None of the months the agenda covers has a free slot left.
 class _NoFreeSlots extends StatelessWidget {
   const _NoFreeSlots();
 
@@ -64,12 +65,12 @@ class _NoFreeSlots extends StatelessWidget {
 }
 
 class ScheduleSheet extends StatefulWidget {
-  const ScheduleSheet({super.key, required this.selection, required this.agenda});
+  const ScheduleSheet({super.key, required this.selection, required this.months});
 
   final ServiceSelection selection;
 
   /// Has at least one free slot: [showScheduleSheet] says so instead of opening an empty agenda.
-  final AppointmentAgenda agenda;
+  final BookingMonths months;
 
   @override
   State<ScheduleSheet> createState() => _ScheduleSheetState();
@@ -77,7 +78,11 @@ class ScheduleSheet extends StatefulWidget {
 
 class _ScheduleSheetState extends State<ScheduleSheet> {
   // A slot someone takes meanwhile is marked booked here, so the client moves off it.
-  late AppointmentAgenda _agenda = widget.agenda;
+  late final List<AppointmentAgenda> _months = [...widget.months.months];
+  late int _monthIndex = widget.months.opening!.month;
+
+  AppointmentAgenda get _agenda => _months[_monthIndex];
+  set _agenda(AppointmentAgenda month) => _months[_monthIndex] = month;
   String? _ticket;
   bool _isBooking = false;
 
@@ -92,8 +97,9 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   late final FixedExtentScrollController _minuteWheel;
   bool _isConfirmed = false;
   bool _showsProblem = false;
-  // Opens on the first free day after today, at the free time closest to 11:00.
-  late int _day = _agenda.firstBookableDay!;
+  // Opens on the first free day after today, this month or the next, at the free time closest to
+  // 11:00.
+  late int _day = widget.months.opening!.day;
   late String _time = _agenda.nearestSlot(_day, '11:00');
 
   @override
@@ -143,7 +149,13 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
     return [
       _SelectionCard(selection: widget.selection),
       const SectionHeader('Día', topSpacing: 20),
-      _MonthCalendar(agenda: _agenda, selectedDay: _day, onPick: _pickDay),
+      _MonthCalendar(
+        agenda: _agenda,
+        selectedDay: _day,
+        onPick: _pickDay,
+        onPrevious: _canShowMonth(_monthIndex - 1) ? () => _showMonth(_monthIndex - 1) : null,
+        onNext: _canShowMonth(_monthIndex + 1) ? () => _showMonth(_monthIndex + 1) : null,
+      ),
       const SectionHeader('Hora', topSpacing: 20),
       _TimeWheels(
         hours: _agenda.wheelHoursFor(_day),
@@ -178,6 +190,20 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
     setState(() {
       _day = day;
       _time = _agenda.nearestSlot(day, _time);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollWheelsTo(_time));
+  }
+
+  bool _canShowMonth(int index) {
+    return index >= 0 && index < _months.length && _months[index].firstBookableDay != null;
+  }
+
+  /// Another month opens on its first free day, at the free time closest to the one chosen.
+  void _showMonth(int index) {
+    setState(() {
+      _monthIndex = index;
+      _day = _agenda.firstBookableDay!;
+      _time = _agenda.nearestSlot(_day, _time);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollWheelsTo(_time));
   }
@@ -467,13 +493,45 @@ class _SelectionCard extends StatelessWidget {
   }
 }
 
+/// ‹ or › beside the month name; gray when there is no month that way.
+class _MonthArrow extends StatelessWidget {
+  const _MonthArrow({required this.icon, required this.tooltip, required this.onPressed});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      color: AppColors.ink,
+      disabledColor: AppColors.disabledLabel,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+    );
+  }
+}
+
 /// Month grid, weeks starting on Monday. Days without a free slot keep their place in gray.
 class _MonthCalendar extends StatelessWidget {
-  const _MonthCalendar({required this.agenda, required this.selectedDay, required this.onPick});
+  const _MonthCalendar({
+    required this.agenda,
+    required this.selectedDay,
+    required this.onPick,
+    required this.onPrevious,
+    required this.onNext,
+  });
 
   final AppointmentAgenda agenda;
   final int selectedDay;
   final ValueChanged<int> onPick;
+
+  /// Null when there is no month to go to, or none with a free slot.
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -487,8 +545,16 @@ class _MonthCalendar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-            child: Text(agenda.monthName, style: AppText.body.copyWith(fontWeight: FontWeight.w800)),
+            padding: const EdgeInsets.fromLTRB(8, 0, 0, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(agenda.monthName, style: AppText.body.copyWith(fontWeight: FontWeight.w800)),
+                ),
+                _MonthArrow(icon: Icons.chevron_left_rounded, tooltip: 'Mes anterior', onPressed: onPrevious),
+                _MonthArrow(icon: Icons.chevron_right_rounded, tooltip: 'Mes siguiente', onPressed: onNext),
+              ],
+            ),
           ),
           _weekdayInitials(),
           const SizedBox(height: 4),

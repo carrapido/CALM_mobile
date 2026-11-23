@@ -23,7 +23,9 @@ Boards "Apple: entrada" and "Apple: ayuda". Source: [design/entrada.html](../des
   3. Empty NIP: "Escribe tu NIP de 4 dígitos."
   4. Short NIP: "Al NIP le falta 1 dígito." / "Al NIP le faltan N dígitos."
   5. Wrong pair (NIP label turns red): "Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller."
-- Valid pair goes to Pedidos. Demo client until the API exists: phone `9981234567`, NIP `2580`.
+- Valid pair goes to Pedidos. Until the API existed, a demo client signed in with a fixed NIP;
+  sign-in now goes through Supabase (`acceso-cliente-supabase.md`), that NIP was rotated, and no
+  working NIP is ever recorded in this repository.
 - "Olvidé mi NIP" and the help button open the Ayuda sheet.
 - Bottom: "¿Primera vez?" + card "Agenda una cita / Eliges tus arreglos y creas tu NIP." → Servicios.
 

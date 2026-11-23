@@ -47,6 +47,26 @@ void main() {
     test('has no problem when a complete pair matches', () {
       expect(problemFor('998 123 4567', '2580', credentialsMatch: true), isNull);
     });
+  });
+
+  group('LoginForm.incompleteProblem', () {
+    test('is the first rule of the form that is not met', () {
+      final problem = const LoginForm(phone: '998 123 4', nip: '').incompleteProblem;
+
+      expect(problem?.field, LoginField.phone);
+      expect(problem?.message, 'Al celular le faltan 3 dígitos.');
+    });
+
+    test('is null for a complete pair, whoever owns it', () {
+      expect(const LoginForm(phone: '998 123 4567', nip: '1357').incompleteProblem, isNull);
+    });
+  });
+
+  group('LoginForm.mismatch', () {
+    test('blames the NIP with the workshop wording', () {
+      expect(LoginForm.mismatch.field, LoginField.nip);
+      expect(LoginForm.mismatch.message, 'Tu celular o tu NIP no coinciden. Revísalos o escríbele al taller.');
+    });
 
     test('counts only the digits of the phone', () {
       expect(const LoginForm(phone: '998 123 4567', nip: '').phoneDigits, '9981234567');
