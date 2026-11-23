@@ -26,7 +26,8 @@ class SupabaseClientData implements ClientData {
         .from('services')
         .select('id, name, category, base_price_mxn')
         .eq('is_active', true)
-        .order('id');
+        // Ascending: supabase-dart's order() is descending unless told otherwise.
+        .order('id', ascending: true);
     return Catalog.fromRows(rows);
   }
 
