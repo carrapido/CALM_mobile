@@ -124,5 +124,12 @@ due review.
   orchestrator with the real adapter: a client registered from the panel signs in to the app, and
   after a reset from the panel the new pair signs in and the old one does not. Details in CALM_web
   `odd/tasks/panel-clientes.md` L3, including a first run spoiled by a cleanup run in parallel.
+- **L14** — First run on a device: the debug APK on the Android emulator (Pixel 10), against the
+  live project. Entrada; María signed in with her real NIP; Pedidos read "Todavía no tienes
+  pedidos."; Perfil showed her name and phone; Servicios listed the seven active services; the
+  agenda opened on Monday 23 with the blocked 25th and Sunday 29 in gray, and › moved to December,
+  opening on Tuesday 1. The device showed what no test had: the catalog came newest first, because
+  supabase-dart's `order()` is descending by default (the earlier check used the REST API, where
+  `order=id` is ascending). Fixed with `ascending: true` and seen right on the emulator.
 - **L4** — CALM_web's `src/access` tests failed to load on `main` before any of this work too:
   `node_modules` predated `@supabase/supabase-js`. `npm ci` fixed it: 22 files, 130 tests pass.
