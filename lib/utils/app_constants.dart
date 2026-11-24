@@ -51,8 +51,14 @@ class AppConstants {
   static const String helpWhatsApp = 'Escribir por WhatsApp';
   static const String helpCall = 'Llamar al taller';
   static const String helpDirections = 'Cómo llegar';
-  static const String helpWorkshopInfo =
-      'Taller Cancún · [DIRECCIÓN DEL TALLER] · 10:00 a 18:00';
+  static const String helpWorkshopInfo = 'Taller Cancún · $workshopAddress · 10:00 a 18:00';
+
+  // Where the workshop is (odd/tasks/telefono-mapa.md): the one place for its address and map.
+  static const String workshopAddress =
+      'Benito Juárez 223, casa 22, Los Héroes, Mz 10, 77517 Cancún, Q.R.';
+  static const String workshopMapsUrl = 'https://maps.app.goo.gl/nGsvenuYn4VE4rBfA?g_st=aw';
+  static const String directionsOpened = 'Abrimos Mapas con la dirección';
+  static const String directionsFailed = 'No pudimos abrir Mapas. Estamos en $workshopAddress';
 
   // Servicios
   static const String servicesTitle = 'Servicios';

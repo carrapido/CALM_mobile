@@ -403,6 +403,25 @@ void main() {
       expect(api.sent.single.body, {'phone': '9981234567', 'currentNip': '1357', 'newNip': '2468'});
     });
 
+    test('puts her current NIP, and no new one, when she changes only her phone', () async {
+      final api = FakeApi((_) => json({'client': {'id': 1, 'name': 'María López', 'phone': '9987654321'}}));
+
+      await dataOver(api).saveProfile(const ProfileChange(phoneDigits: '9987654321', currentNip: '1357'));
+
+      expect(api.sent.single.body, {'phone': '9987654321', 'currentNip': '1357'});
+    });
+
+    test('shows a missing current NIP on that field with the workshop\'s wording', () async {
+      const missing = 'Escribe tu NIP actual para cambiar tu celular.';
+      final api = FakeApi((_) => failure(400, 'current_nip', missing));
+
+      final outcome = await dataOver(api).saveProfile(const ProfileChange(phoneDigits: '9987654321'));
+
+      expect(outcome, isA<ProfileRefused>()
+          .having((o) => o.message, 'message', missing)
+          .having((o) => o.field, 'field', ProfileField.currentNip));
+    });
+
     test('maps every refusal to Perfil\'s field and wording', () async {
       final cases = <(int, String, Matcher)>[
         (400, 'phone', isA<ProfileRefused>()

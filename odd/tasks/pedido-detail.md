@@ -10,7 +10,7 @@ Boards "Apple: pedido listo", "Apple: pedido en proceso", "Apple: mi cita". Sour
 - Back link "‹ Pedidos" and help button; title "Pedido", "Ticket NNNN".
 - Status card (radius 22, soft shadow): work name, headline = state. Orders (not appointments) show a 4-step bar Recibido / En proceso / Listo / Entregado; steps up to the current one are ink, the current label is w800.
 - Ready: "Voy en camino" primary button → headline "Vas en camino" and status note "El taller ya sabe que vas en camino".
-- Ready or appointment: "Cómo llegar" tinted button → status note "Abrimos Mapas con la dirección". Otherwise "Escribir al taller" opens Ayuda.
+- Ready or appointment: "Cómo llegar" tinted button opens the workshop on Google Maps (odd/tasks/telefono-mapa.md) → status note "Abrimos Mapas con la dirección". Otherwise "Escribir al taller" opens Ayuda.
 - Amount group: "Pago / Total, se paga en el taller" or, for appointments, "Cotización / Cotización preliminar".
 - Appointment: "Cancelar cita" (destructive `#DC2626`) opens an iOS action sheet: "¿Cancelar tu cita?" / "Tu horario del jueves 5 a las 11:00 queda libre para alguien más." / "Sí, cancelar la cita" (→ Entrada) / "No, conservarla". When cancel is not allowed: "Faltan menos de 24 horas para tu cita: para cancelarla, escríbele al taller."
 - "Más" group: "Agendar otra cita" → Servicios. Tab bar with Pedidos current.

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../themes/app_colors.dart';
+import '../services/external_links.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
+import 'form_alert.dart';
 import 'icon_row.dart';
 import 'inset_group.dart';
 import 'sheet_parts.dart';
@@ -23,8 +25,22 @@ Future<void> showHelpSheet(BuildContext context) {
   );
 }
 
-class HelpSheet extends StatelessWidget {
+class HelpSheet extends StatefulWidget {
   const HelpSheet({super.key});
+
+  @override
+  State<HelpSheet> createState() => _HelpSheetState();
+}
+
+class _HelpSheetState extends State<HelpSheet> {
+  bool _directionsFailed = false;
+
+  // Maps takes over when it opens; when nothing takes the link, the sheet says so.
+  Future<void> _openDirections() async {
+    final opened = await openWorkshopMap(context);
+    if (!mounted) return;
+    setState(() => _directionsFailed = !opened);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +56,23 @@ class HelpSheet extends StatelessWidget {
             const SizedBox(height: 16),
             _Header(onDone: () => Navigator.of(context).pop()),
             const SizedBox(height: 16),
-            // The contact actions need the workshop's phone and address, which the design leaves open.
-            const InsetGroup(
+            // WhatsApp and the call still need the workshop's phone, which the design leaves open.
+            InsetGroup(
               separatorIndent: 58,
               children: [
-                IconRow(icon: Icons.chat_bubble_outline_rounded, title: AppConstants.helpWhatsApp),
-                IconRow(icon: Icons.phone_outlined, title: AppConstants.helpCall),
-                IconRow(icon: Icons.location_on_outlined, title: AppConstants.helpDirections),
+                const IconRow(icon: Icons.chat_bubble_outline_rounded, title: AppConstants.helpWhatsApp),
+                const IconRow(icon: Icons.phone_outlined, title: AppConstants.helpCall),
+                IconRow(
+                  icon: Icons.location_on_outlined,
+                  title: AppConstants.helpDirections,
+                  onTap: _openDirections,
+                ),
               ],
             ),
+            if (_directionsFailed) ...[
+              const SizedBox(height: 10),
+              const FormAlert(AppConstants.directionsFailed),
+            ],
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),

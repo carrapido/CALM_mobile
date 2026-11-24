@@ -2,6 +2,7 @@ import 'package:calm_mobil/models/client_action.dart';
 import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/order_detail_screen.dart';
+import 'package:calm_mobil/services/external_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -126,14 +127,46 @@ void main() {
     expect(find.text('Listo'), findsOneWidget);
   });
 
-  testWidgets('confirms that directions opened', (tester) async {
-    await pumpDetail(tester, readyOrder);
+  testWidgets('opens the workshop on Maps and confirms it', (tester) async {
+    final opened = <Uri>[];
+    await pumpDetail(tester, readyOrder, openLink: (link) async {
+      opened.add(link);
+      return true;
+    });
 
     await tester.tap(find.text('Cómo llegar'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
+    expect(opened, [Uri.parse('https://maps.app.goo.gl/nGsvenuYn4VE4rBfA?g_st=aw')]);
     expect(find.text('Abrimos Mapas con la dirección'), findsOneWidget);
     expect(find.text('Cómo llegar'), findsNothing);
+  });
+
+  testWidgets('opens Maps from an appointment too', (tester) async {
+    final opened = <Uri>[];
+    await pumpDetail(tester, appointment, openLink: (link) async {
+      opened.add(link);
+      return true;
+    });
+
+    await tester.tap(find.text('Cómo llegar'));
+    await tester.pumpAndSettle();
+
+    expect(opened, [Uri.parse('https://maps.app.goo.gl/nGsvenuYn4VE4rBfA?g_st=aw')]);
+  });
+
+  testWidgets('says so, with the address, when Maps cannot open', (tester) async {
+    await pumpDetail(tester, readyOrder, openLink: (_) async => false);
+
+    await tester.tap(find.text('Cómo llegar'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No pudimos abrir Mapas. Estamos en Benito Juárez 223, casa 22, Los Héroes, Mz 10, 77517 Cancún, Q.R.'),
+      findsOneWidget,
+    );
+    expect(find.text('Abrimos Mapas con la dirección'), findsNothing);
+    expect(find.text('Cómo llegar'), findsOneWidget);
   });
 
   testWidgets('offers to write to the workshop while the order is in progress', (tester) async {
@@ -295,12 +328,12 @@ void main() {
   });
 }
 
-Future<void> pumpDetail(WidgetTester tester, Order order, {FakeClientData? data}) async {
+Future<void> pumpDetail(WidgetTester tester, Order order, {FakeClientData? data, LinkOpener? openLink}) async {
   // Tall enough for every section without scrolling.
   tester.view.physicalSize = const Size(390, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(withClientData(data: data,
+  await tester.pumpWidget(withClientData(data: data, openLink: openLink,
     MaterialApp(
       initialRoute: '${AppRoutes.orders}/detalle',
       routes: {
