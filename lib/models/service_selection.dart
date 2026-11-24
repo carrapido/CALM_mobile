@@ -1,3 +1,4 @@
+import 'catalog.dart';
 import 'service_item.dart';
 
 /// The repairs the client marked, and whether the garment is urgent.
@@ -7,6 +8,23 @@ class ServiceSelection {
     this.isUrgent = false,
     this.urgentSurchargeMxn = 0,
   });
+
+  /// The [catalog]'s repairs marked in [selectedIds], in the catalog's order whatever order they
+  /// were tapped in, with its urgency charge.
+  factory ServiceSelection.fromCatalog(
+    Catalog catalog, {
+    required Set<String> selectedIds,
+    required bool isUrgent,
+  }) {
+    return ServiceSelection(
+      services: [
+        for (final service in catalog.services)
+          if (selectedIds.contains(service.id)) service,
+      ],
+      isUrgent: isUrgent,
+      urgentSurchargeMxn: catalog.urgentSurchargeMxn,
+    );
+  }
 
   final List<ServiceItem> services;
   final bool isUrgent;

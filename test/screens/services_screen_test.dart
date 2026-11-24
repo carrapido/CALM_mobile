@@ -143,6 +143,27 @@ void main() {
     expect(find.text('Pedidos'), findsNothing);
   });
 
+  testWidgets('opens the Agendar sheet without "Tus datos" for a signed-in client', (tester) async {
+    final data = FakeClientData(signedIn: true);
+    await pumpServices(tester, data: data);
+
+    await tester.tap(find.text('Ajuste de cintura'));
+    await tester.pump();
+    await tester.tap(find.text('Elegir horario'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Agendar cita'), findsOneWidget);
+    expect(find.text(r'Cotización preliminar: $180 MXN'), findsOneWidget);
+    expect(find.text('Tus datos'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(find.text('Confirmar · Jue 5, 11:00'));
+    await tester.pumpAndSettle();
+
+    expect(data.bookings.single.contact, isNull);
+    expect(find.text('Cita agendada'), findsOneWidget);
+  });
+
   testWidgets('takes her to Entrada, signed out, when her session ended', (tester) async {
     final data = FakeClientData(signedIn: true)..sessionEnded = true;
     await pumpServicesRoutes(tester, data);

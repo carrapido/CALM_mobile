@@ -66,6 +66,11 @@ class ClientDataScope extends InheritedWidget {
     return scope!.data;
   }
 
+  /// Null when no scope is above [context], as in tests that stand in for the workshop otherwise.
+  static ClientData? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ClientDataScope>()?.data;
+  }
+
   @override
   bool updateShouldNotify(ClientDataScope oldWidget) => data != oldWidget.data;
 }
