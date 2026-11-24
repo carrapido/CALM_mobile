@@ -5,8 +5,10 @@ import '../models/client_action.dart';
 import '../models/order.dart';
 import '../routes/app_routes.dart';
 import '../services/client_data.dart';
+import '../services/external_links.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
+import '../utils/app_constants.dart';
 import '../widgets/action_button.dart';
 import '../widgets/app_tab_bar.dart';
 import '../widgets/destructive_row.dart';
@@ -33,6 +35,7 @@ class OrderDetailScreen extends StatefulWidget {
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
   late bool _isOnTheWay = widget.order.status == OrderStatus.onTheWay;
   bool _directionsOpened = false;
+  bool _directionsFailed = false;
   bool _isActing = false;
 
   // What the workshop refused, shown where the client asked.
@@ -146,12 +149,28 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _directionsAction() {
-    if (_directionsOpened) return const StatusNote('Abrimos Mapas con la dirección');
-    return ActionButton.tinted(
-      label: 'Cómo llegar',
-      icon: Icons.location_on_outlined,
-      onPressed: () => setState(() => _directionsOpened = true),
+    if (_directionsOpened) return const StatusNote(AppConstants.directionsOpened);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_directionsFailed) const FormAlert(AppConstants.directionsFailed),
+        ActionButton.tinted(
+          label: AppConstants.helpDirections,
+          icon: Icons.location_on_outlined,
+          onPressed: _openDirections,
+        ),
+      ],
     );
+  }
+
+  // When nothing takes the link, the button stays and the address is there to search by hand.
+  Future<void> _openDirections() async {
+    final opened = await openWorkshopMap(context);
+    if (!mounted) return;
+    setState(() {
+      _directionsOpened = opened;
+      _directionsFailed = !opened;
+    });
   }
 
   List<Widget> _cancellation() {

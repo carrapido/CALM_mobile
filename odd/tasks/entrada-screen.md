@@ -32,7 +32,7 @@ Boards "Apple: entrada" and "Apple: ayuda". Source: [design/entrada.html](../des
 ### Ayuda sheet
 - Modal bottom sheet over an ink 35 % scrim; enters in 420 ms with `cubic-bezier(0.32, 0.72, 0, 1)`, leaves in 240 ms; no animation when the OS asks for reduced motion.
 - Grabber, title "¿Te ayudamos?", "Listo" closes it.
-- Group of rows: "Escribir por WhatsApp", "Llamar al taller", "Cómo llegar"; footnote "Taller Cancún · [DIRECCIÓN DEL TALLER] · 10:00 a 18:00".
+- Group of rows: "Escribir por WhatsApp", "Llamar al taller", "Cómo llegar"; footnote "Taller Cancún · Benito Juárez 223, casa 22, Los Héroes, Mz 10, 77517 Cancún, Q.R. · 10:00 a 18:00".
 
 ## Tasks
 - [x] Tests from the spec (RED): login rules, Entrada widget behaviour, Ayuda sheet, app smoke test.

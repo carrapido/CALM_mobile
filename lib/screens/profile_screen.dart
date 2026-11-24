@@ -97,7 +97,7 @@ class _ProfileViewState extends State<_ProfileView> {
             _nipRow('Nuevo', _newNipController, isInvalid: invalidField == ProfileField.newNip),
           ],
         ),
-        const GroupFootnote('No es para pagar. Déjalo vacío si no lo cambias.'),
+        const GroupFootnote('No es para pagar. Escribe el actual para cambiar tu NIP o tu celular.'),
         const SizedBox(height: 24),
         _saveArea(),
         const SizedBox(height: 24),
@@ -201,6 +201,7 @@ class _ProfileViewState extends State<_ProfileView> {
       phone: _phoneController.text,
       currentNip: _currentNipController.text,
       newNip: _newNipController.text,
+      savedPhone: _savedPhone,
     );
   }
 

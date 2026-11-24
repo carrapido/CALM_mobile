@@ -9,8 +9,8 @@ Board "Apple: perfil". Source: [design/perfil.html](../design/perfil.html).
 ## Spec
 - Help button; title "Perfil"; card with initials avatar (52 pt ink circle), name "Carlos Ruiz", saved phone.
 - "Celular": row "Número" (grouped digits); footnote "Con este número entras y te avisamos por WhatsApp."
-- "NIP": rows "Actual" and "Nuevo" (4 digits, obscured); footnote "No es para pagar. Déjalo vacío si no lo cambias."
-- Save validation, first problem only, red label: "Escribe tu celular a 10 dígitos." / "Tu NIP actual no coincide." / "El NIP nuevo necesita 4 dígitos." / "El NIP nuevo debe ser distinto del actual." Changing the NIP is optional.
+- "NIP": rows "Actual" and "Nuevo" (4 digits, obscured); footnote "No es para pagar. Escribe el actual para cambiar tu NIP o tu celular."
+- Save validation, first problem only, red label: "Escribe tu celular a 10 dígitos." / "Tu NIP actual no coincide." / "El NIP nuevo necesita 4 dígitos." / "El NIP nuevo debe ser distinto del actual." Changing the NIP is optional. A new phone needs the current NIP: "Escribe tu NIP actual para cambiar tu celular." (odd/tasks/telefono-mapa.md).
 - Saved: status note "Guardamos tus cambios" replaces the button until the next edit; the card shows the new phone.
 - "Cerrar sesión" (destructive) → Entrada, clearing the stack. Tab bar with Perfil current.
 

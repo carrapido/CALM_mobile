@@ -8,6 +8,7 @@ import 'package:calm_mobil/models/profile_update.dart';
 import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/user_profile.dart';
 import 'package:calm_mobil/services/client_data.dart';
+import 'package:calm_mobil/services/external_links.dart';
 import 'package:flutter/widgets.dart';
 
 /// The panel's demo catalog, the data the Servicios design was drawn with.
@@ -197,7 +198,11 @@ Widget entradaDestination(BuildContext context) {
 /// What Entrada shows after her session ended.
 const sessionEndedAtEntrada = 'entrada destino: Tu sesión terminó. Vuelve a entrar.';
 
-/// [app] with [data] above it, as `main` provides the real one.
-Widget withClientData(Widget app, {ClientData? data}) {
-  return ClientDataScope(data: data ?? FakeClientData(), child: app);
+/// [app] with [data] above it, as `main` provides the real one. Links open nowhere unless the test
+/// passes [openLink]; by default they report that they did not open.
+Widget withClientData(Widget app, {ClientData? data, LinkOpener? openLink}) {
+  return LinkOpenerScope(
+    open: openLink ?? (_) async => false,
+    child: ClientDataScope(data: data ?? FakeClientData(), child: app),
+  );
 }

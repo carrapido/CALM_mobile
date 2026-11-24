@@ -43,7 +43,7 @@ void main() {
       'NIP',
       'Actual',
       'Nuevo',
-      'No es para pagar. Déjalo vacío si no lo cambias.',
+      'No es para pagar. Escribe el actual para cambiar tu NIP o tu celular.',
       'Guardar cambios',
       'Cerrar sesión',
     ]) {
@@ -57,6 +57,7 @@ void main() {
     await pumpProfile(tester);
 
     await tester.enterText(phoneField, '9987654321');
+    await tester.enterText(currentNipField, '2580');
     await tester.tap(find.text('Guardar cambios'));
     await tester.pumpAndSettle();
 
@@ -64,6 +65,64 @@ void main() {
     expect(find.text('Guardar cambios'), findsNothing);
     expect(find.text('998 765 4321'), findsNWidgets(2));
     expect(find.text('998 123 4567'), findsNothing);
+  });
+
+  testWidgets('asks for the current NIP before changing the phone', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9987654321');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Escribe tu NIP actual para cambiar tu celular.'), findsOneWidget);
+    expect(labelColor(tester, 'Actual'), AppColors.errorText);
+    expect(labelColor(tester, 'Número'), AppColors.ink);
+    expect(data.profileChanges, isEmpty);
+    expect(find.text('998 123 4567'), findsOneWidget);
+  });
+
+  testWidgets('sends the current NIP, and no new one, with a new phone', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9987654321');
+    await tester.enterText(currentNipField, '2580');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    final change = data.profileChanges.single;
+    expect(change.phoneDigits, '9987654321');
+    expect(change.currentNip, '2580');
+    expect(change.newNip, '');
+    expect(find.text('Guardamos tus cambios'), findsOneWidget);
+  });
+
+  testWidgets('shows the workshop\'s current NIP refusal of a new phone on that field', (tester) async {
+    final data = FakeClientData(
+      profileSaveResult: const ProfileRefused('Tu NIP actual no coincide.', field: ProfileField.currentNip),
+    );
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9987654321');
+    await tester.enterText(currentNipField, '1111');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu NIP actual no coincide.'), findsOneWidget);
+    expect(labelColor(tester, 'Actual'), AppColors.errorText);
+    expect(find.text('Guardamos tus cambios'), findsNothing);
+  });
+
+  testWidgets('saves the same phone without asking for the NIP', (tester) async {
+    final data = FakeClientData();
+    await pumpProfile(tester, data: data);
+
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(data.profileChanges.single.currentNip, '');
+    expect(find.text('Guardamos tus cambios'), findsOneWidget);
   });
 
   testWidgets('brings the button back on the next edit', (tester) async {
