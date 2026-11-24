@@ -14,7 +14,7 @@ The app stops reading and writing Supabase directly and calls the CALM Express A
 
 ## Tasks
 
-- [ ] F1 (S1-S3) ApiClientAccess and ApiClientData implementing the existing ports over HTTP; `API_URL` dart-define; Android cleartext only for development; main.dart wires them; tests with a fake HTTP client. Route: worker. Commit: —
+- [x] F1 (S1-S3) ApiClientAccess and ApiClientData implementing the existing ports over HTTP; `API_URL` dart-define; Android cleartext only for development; main.dart wires them; tests with a fake HTTP client. Route: worker. Commit: pending
 
 ## Log
 

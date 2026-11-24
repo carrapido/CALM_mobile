@@ -15,6 +15,19 @@ class Catalog {
     );
   }
 
+  /// What `GET /api/client/services` answers: `[{id, name, category, basePriceMxn}]`.
+  factory Catalog.fromApi(List<Object?> services) {
+    return Catalog.fromRows([
+      for (final service in services.cast<Map<String, dynamic>>())
+        {
+          'id': service['id'],
+          'name': service['name'],
+          'category': service['category'],
+          'base_price_mxn': service['basePriceMxn'],
+        },
+    ]);
+  }
+
   static const _urgentCategory = 'extra';
 
   final List<ServiceItem> services;
