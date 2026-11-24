@@ -18,6 +18,7 @@ import '../widgets/inset_group.dart';
 import '../widgets/labeled_field_row.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/press_scale.dart';
+import '../widgets/schedule_sheet.dart';
 import '../widgets/section_header.dart';
 import '../widgets/top_app_bar_widget.dart';
 
@@ -89,7 +90,7 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
                     _ForgotNipButton(onPressed: _openHelp),
                     const Spacer(),
                     const SizedBox(height: 24),
-                    _FirstVisitCard(onTap: _openServices),
+                    _FirstVisitCard(onTap: _openFirstVisit),
                   ],
                 ),
               ),
@@ -196,7 +197,9 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
     });
   }
 
-  void _openServices() => Navigator.of(context).pushNamed(AppRoutes.services);
+  /// A first-time client books in a sheet and only then enters the app
+  /// (odd/tasks/flujo-primera-vez.md S1).
+  void _openFirstVisit() => showFirstVisitSheet(context);
 }
 
 class _ProblemMessage extends StatelessWidget {

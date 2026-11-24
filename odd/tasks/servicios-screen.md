@@ -28,3 +28,6 @@ Board "Apple: servicios". Source: [design/servicios.html](../design/servicios.ht
 - Pending checks: the urgency surcharge is 0 until the workshop defines it ("Cargo extra").
 - Next step: feature 5, [Agendar sheet](agendar-sheet.md).
 
+### 2026-11-24: Servicios is for signed-in clients only ([flujo-primera-vez.md](flujo-primera-vez.md))
+- S1 (user): "Pantalla de inicio de sesión donde se puede loguear o agendar una cita para los clientes primerizos. Si se seleccionaba la opcion de agendar cita debajo del mensaje de ¿Primera vez? y muestra una hoja que sube en donde seleccionas el servicio, agendas y pones tus datos de nombre, numero y nip. Y solo asi te dejaba ver los demas apartados de la aplicación."
+- Entrada no longer opens Servicios; without a session /services opens Entrada (S5). A first-time client marks her repairs on the first step of the Agendar sheet, which reuses this catalog's rows, "Prenda urgente" and quote (`ServicePicker`, `ServiceSelection.fromCatalog`). Signed in, Servicios → "Elegir horario" → the sheet without "Tus datos" is unchanged.

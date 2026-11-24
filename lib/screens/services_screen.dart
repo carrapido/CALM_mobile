@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog.dart';
@@ -11,13 +10,11 @@ import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
 import '../widgets/app_tab_bar.dart';
-import '../widgets/group_footnote.dart';
-import '../widgets/inset_group.dart';
 import '../widgets/loaded.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/press_scale.dart';
 import '../widgets/schedule_sheet.dart';
-import '../widgets/section_header.dart';
+import '../widgets/service_picker.dart';
 import '../widgets/tab_page.dart';
 
 /// Servicios: the client marks the repairs they need and moves on to choose a time.
@@ -66,34 +63,19 @@ class _CatalogViewState extends State<_CatalogView> {
           : _SelectionBar(selection: selection, onChooseSchedule: () => _openSchedule(selection)),
       children: [
         ServicesScreen._heading,
-        InsetGroup(
-          children: [
-            for (final service in widget.catalog.services)
-              _ServiceRow(
-                service,
-                isSelected: _selectedIds.contains(service.id),
-                onTap: () => _toggle(service),
-              ),
-          ],
+        ServicePicker(
+          catalog: widget.catalog,
+          selectedIds: _selectedIds,
+          isUrgent: _isUrgent,
+          onToggle: _toggle,
+          onUrgentChanged: _setUrgent,
         ),
-        const GroupFootnote(AppConstants.servicesDisclaimer),
-        const SectionHeader(AppConstants.extrasTitle),
-        InsetGroup(children: [_UrgentRow(isUrgent: _isUrgent, onChanged: _setUrgent)]),
-        const GroupFootnote(AppConstants.urgentNote),
       ],
     );
   }
 
-  // Marked services keep the catalog's order, whatever order they were tapped in.
   ServiceSelection _currentSelection() {
-    return ServiceSelection(
-      services: [
-        for (final service in widget.catalog.services)
-          if (_selectedIds.contains(service.id)) service,
-      ],
-      isUrgent: _isUrgent,
-      urgentSurchargeMxn: widget.catalog.urgentSurchargeMxn,
-    );
+    return ServiceSelection.fromCatalog(widget.catalog, selectedIds: _selectedIds, isUrgent: _isUrgent);
   }
 
   void _openSchedule(ServiceSelection selection) => showScheduleSheet(context, selection);
@@ -106,112 +88,6 @@ class _CatalogViewState extends State<_CatalogView> {
   }
 
   void _setUrgent(bool isUrgent) => setState(() => _isUrgent = isUrgent);
-}
-
-class _ServiceRow extends StatelessWidget {
-  const _ServiceRow(this.service, {required this.isSelected, required this.onTap});
-
-  final ServiceItem service;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: isSelected,
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        highlightColor: AppColors.pressedCell,
-        splashFactory: NoSplash.splashFactory,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
-            child: Row(
-              spacing: 12,
-              children: [
-                Expanded(child: Text(service.title, style: AppText.body)),
-                _PriceLabel(service.priceLabel, isQuoted: service.priceMxn == null),
-                _CheckCircle(isChecked: isSelected),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A price in bold ink; something still to be quoted, smaller and gray.
-class _PriceLabel extends StatelessWidget {
-  const _PriceLabel(this.label, {required this.isQuoted});
-
-  final String label;
-  final bool isQuoted;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = isQuoted
-        ? AppText.subhead.copyWith(color: AppColors.onSurfaceVariant)
-        : AppText.body.copyWith(fontWeight: FontWeight.w700);
-    return Text(label, style: style);
-  }
-}
-
-class _CheckCircle extends StatelessWidget {
-  const _CheckCircle({required this.isChecked});
-
-  final bool isChecked;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isChecked ? AppColors.ink : null,
-        border: Border.all(color: isChecked ? AppColors.ink : AppColors.checkRing, width: 2),
-      ),
-      child: isChecked ? const Icon(Icons.check_rounded, size: 15, color: Colors.white) : null,
-    );
-  }
-}
-
-class _UrgentRow extends StatelessWidget {
-  const _UrgentRow({required this.isUrgent, required this.onChanged});
-
-  final bool isUrgent;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onChanged(!isUrgent),
-      highlightColor: AppColors.pressedCell,
-      splashFactory: NoSplash.splashFactory,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 60),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 14, 8),
-          child: Row(
-            spacing: 12,
-            children: [
-              Expanded(child: Text(AppConstants.urgentTitle, style: AppText.body)),
-              const _PriceLabel(AppConstants.urgentSubtitle, isQuoted: true),
-              CupertinoSwitch(
-                value: isUrgent,
-                onChanged: onChanged,
-                activeTrackColor: AppColors.ink,
-                inactiveTrackColor: AppColors.switchOffTrack,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Floats above the tab bar while something is marked: what was chosen, its quote, and the next step.

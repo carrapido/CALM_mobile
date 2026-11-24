@@ -27,7 +27,7 @@ Boards "Apple: entrada" and "Apple: ayuda". Source: [design/entrada.html](../des
   sign-in now goes through Supabase (`acceso-cliente-supabase.md`), that NIP was rotated, and no
   working NIP is ever recorded in this repository.
 - "Olvidé mi NIP" and the help button open the Ayuda sheet.
-- Bottom: "¿Primera vez?" + card "Agenda una cita / Eliges tus arreglos y creas tu NIP." → Servicios.
+- Bottom: "¿Primera vez?" + card "Agenda una cita / Eliges tus arreglos y creas tu NIP." → first-time Agendar sheet (superseded "→ Servicios"; see the 2026-11-24 note).
 
 ### Ayuda sheet
 - Modal bottom sheet over an ink 35 % scrim; enters in 420 ms with `cubic-bezier(0.32, 0.72, 0, 1)`, leaves in 240 ms; no animation when the OS asks for reduced motion.
@@ -48,3 +48,7 @@ Boards "Apple: entrada" and "Apple: ayuda". Source: [design/entrada.html](../des
 - Pending checks: the client's visual sign-off on a device; the Ayuda rows have no action until the workshop's WhatsApp, phone and address exist (then `url_launcher`); sign-in uses `DemoClientAccess` until the API exists, and the API must throttle NIP attempts per phone.
 - Next step: feature 2, [Pedidos list and tab bar](pedidos-screen.md).
 
+### 2026-11-24: first-time flow ([flujo-primera-vez.md](flujo-primera-vez.md))
+- S1 (user): "Pantalla de inicio de sesión donde se puede loguear o agendar una cita para los clientes primerizos. Si se seleccionaba la opcion de agendar cita debajo del mensaje de ¿Primera vez? y muestra una hoja que sube en donde seleccionas el servicio, agendas y pones tus datos de nombre, numero y nip. Y solo asi te dejaba ver los demas apartados de la aplicación."
+- "Agenda una cita" no longer opens Servicios. It opens the Agendar sheet (`showFirstVisitSheet`, same look and motion as [agendar-sheet.md](agendar-sheet.md)): first the active services from the catalog with "Prenda urgente" ("Elegir horario" once something is marked; loading, and the load failure with "Reintentar"), then the day, the time and "Tus datos" (Nombre, Celular, NIP) with the same messages, and "Confirmar · …". Once booked, her session is open; "Ver mi cita" or "Listo" enters the app on Pedidos with nothing to go back to.
+- Without a session, /services, /orders, /profile and /order open Entrada instead (S5), so a visitor never sees the tab bar.

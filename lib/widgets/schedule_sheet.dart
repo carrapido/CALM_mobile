@@ -6,6 +6,7 @@ import '../models/appointment_agenda.dart';
 import '../models/booking.dart';
 import '../models/booking_months.dart';
 import '../models/booking_form.dart';
+import '../models/catalog.dart';
 import '../models/field_problem.dart';
 import '../models/login_form.dart';
 import '../models/order.dart';
@@ -23,11 +24,31 @@ import 'inset_group.dart';
 import 'labeled_field_row.dart';
 import 'loaded.dart';
 import 'section_header.dart';
+import 'service_picker.dart';
 import 'session_end.dart';
 import 'sheet_parts.dart';
 
-/// Opens "Agendar cita" for the marked repairs: day, time and the client's data, then the ticket.
+/// Opens "Agendar cita" for the marked repairs: day, time and, without a session, the client's
+/// data, then the ticket. Servicios opens it for a signed-in client.
 Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection) {
+  return _showBookingSheet(context, (_) => _ScheduleStep(selection: selection));
+}
+
+/// Opens "Agendar cita" from Entrada for a first-time client: she marks her repairs on the
+/// workshop's active catalog, then the day, the time and her data. Once booked her session is
+/// open, and closing the sheet ("Ver mi cita", "Listo" or any other way) enters the app on Pedidos
+/// with nothing to go back to (odd/tasks/flujo-primera-vez.md S1, S4).
+Future<void> showFirstVisitSheet(BuildContext context) async {
+  final navigator = Navigator.of(context);
+  var isBooked = false;
+  await _showBookingSheet(context, (_) => _FirstVisitFlow(onBooked: () => isBooked = true));
+  if (isBooked && navigator.mounted) {
+    navigator.pushNamedAndRemoveUntil(AppRoutes.orders, (_) => false);
+  }
+}
+
+/// The one look and motion of the Agendar sheet, whichever way it opens.
+Future<void> _showBookingSheet(BuildContext context, WidgetBuilder builder) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -39,18 +60,127 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
     sheetAnimationStyle: sheetMotion(context),
-    builder: (sheetContext) => Loaded<BookingMonths>(
-      load: ClientDataScope.of(sheetContext).agenda,
-      pending: (status, _) => Padding(padding: const EdgeInsets.all(16), child: status),
+    builder: builder,
+  );
+}
+
+/// First-time path: the services she marks, then the agenda for them.
+class _FirstVisitFlow extends StatefulWidget {
+  const _FirstVisitFlow({required this.onBooked});
+
+  final VoidCallback onBooked;
+
+  @override
+  State<_FirstVisitFlow> createState() => _FirstVisitFlowState();
+}
+
+class _FirstVisitFlowState extends State<_FirstVisitFlow> {
+  ServiceSelection? _selection;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_selection case final selection?) {
+      return _ScheduleStep(selection: selection, onBooked: widget.onBooked);
+    }
+    return Loaded<Catalog>(
+      load: ClientDataScope.of(context).catalog,
+      pending: (status, _) => _SheetFrame.choosing(context, children: [status]),
+      builder: (_, catalog) => _ServiceStep(
+        catalog: catalog,
+        onChosen: (selection) => setState(() => _selection = selection),
+      ),
+    );
+  }
+}
+
+/// The repairs she needs, as Servicios offers them, before she chooses a time.
+class _ServiceStep extends StatefulWidget {
+  const _ServiceStep({required this.catalog, required this.onChosen});
+
+  final Catalog catalog;
+  final ValueChanged<ServiceSelection> onChosen;
+
+  @override
+  State<_ServiceStep> createState() => _ServiceStepState();
+}
+
+class _ServiceStepState extends State<_ServiceStep> {
+  final _selectedIds = <String>{};
+  bool _isUrgent = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selection = ServiceSelection.fromCatalog(
+      widget.catalog,
+      selectedIds: _selectedIds,
+      isUrgent: _isUrgent,
+    );
+    return _SheetFrame.choosing(
+      context,
+      footer: [
+        if (!selection.isEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(selection.summary, style: AppText.subhead.copyWith(fontWeight: FontWeight.w700)),
+              Text(selection.quote, style: AppText.footnoteStrong),
+            ],
+          ),
+        ActionButton.primary(
+          label: AppConstants.btnElegirHorario,
+          onPressed: selection.isEmpty ? null : () => widget.onChosen(selection),
+        ),
+      ],
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Text(AppConstants.servicesSubtitle, style: AppText.lead),
+        ),
+        ServicePicker(
+          catalog: widget.catalog,
+          selectedIds: _selectedIds,
+          isUrgent: _isUrgent,
+          onToggle: (service) => setState(() {
+            if (!_selectedIds.remove(service.id)) _selectedIds.add(service.id);
+          }),
+          onUrgentChanged: (isUrgent) => setState(() => _isUrgent = isUrgent),
+        ),
+      ],
+    );
+  }
+}
+
+/// Loads the agenda for [selection] and opens the sheet on it. [onBooked] marks the first-time
+/// path, whose waits and messages keep the sheet's frame and its "Cancelar".
+class _ScheduleStep extends StatelessWidget {
+  const _ScheduleStep({required this.selection, this.onBooked});
+
+  final ServiceSelection selection;
+  final VoidCallback? onBooked;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = ClientDataScope.of(context);
+    return Loaded<BookingMonths>(
+      load: data.agenda,
+      pending: (status, _) => _framed(context, status),
       builder: (_, months) => months.opening == null
-          ? const _NoFreeSlots()
+          ? _framed(context, const _NoFreeSlots())
           : ScheduleSheet(
               selection: selection,
               months: months,
-              isSignedIn: ClientDataScope.of(sheetContext).isSignedIn,
+              isSignedIn: data.isSignedIn,
+              onBooked: onBooked,
             ),
-    ),
-  );
+    );
+  }
+
+  Widget _framed(BuildContext context, Widget child) {
+    if (onBooked == null) {
+      return child is _NoFreeSlots ? child : Padding(padding: const EdgeInsets.all(16), child: child);
+    }
+    return _SheetFrame.choosing(context, children: [child]);
+  }
 }
 
 /// None of the months the agenda covers has a free slot left.
@@ -75,6 +205,7 @@ class ScheduleSheet extends StatefulWidget {
     required this.selection,
     required this.months,
     this.isSignedIn = false,
+    this.onBooked,
   });
 
   final ServiceSelection selection;
@@ -84,6 +215,11 @@ class ScheduleSheet extends StatefulWidget {
 
   /// Has at least one free slot: [showScheduleSheet] says so instead of opening an empty agenda.
   final BookingMonths months;
+
+  /// Set on the first-time path from Entrada: told when the booking is confirmed, and then
+  /// "Ver mi cita" closes the sheet so she enters the app on Pedidos, instead of opening the
+  /// appointment over the screen behind.
+  final VoidCallback? onBooked;
 
   @override
   State<ScheduleSheet> createState() => _ScheduleSheetState();
@@ -137,24 +273,10 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // The sheet stops 6 % short of the top and shrinks above the keyboard.
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.94,
-        child: Column(
-          children: [
-            _SheetHeader(isConfirmed: _isConfirmed, onClose: () => Navigator.of(context).pop()),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                children: _isConfirmed ? _confirmation() : _choices(),
-              ),
-            ),
-            _SheetFooter(children: _isConfirmed ? _confirmedActions() : _choosingActions()),
-          ],
-        ),
-      ),
+    return _SheetFrame(
+      header: _SheetHeader(isConfirmed: _isConfirmed, onClose: () => Navigator.of(context).pop()),
+      footer: _isConfirmed ? _confirmedActions() : _choosingActions(),
+      children: _isConfirmed ? _confirmation() : _choices(),
     );
   }
 
@@ -355,6 +477,7 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
       case BookingConfirmed(:final ticket):
         _ticket = ticket;
         _isConfirmed = true;
+        widget.onBooked?.call();
       case BookingSlotTaken():
         _agenda = _agenda.withBooked(_day, _time);
         _moveOffTakenSlot();
@@ -400,6 +523,10 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   }
 
   void _openAppointment() {
+    if (widget.onBooked != null) {
+      Navigator.of(context).pop();
+      return;
+    }
     final appointment = Order(
       ticket: _ticket!,
       work: widget.selection.names,
@@ -417,6 +544,51 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
   static String _hourOf(String time) => time.split(':').first;
 
   static String _minuteOf(String time) => time.split(':').last;
+}
+
+/// The sheet stops 6 % short of the top and shrinks above the keyboard: a header, what scrolls,
+/// and a footer with the next step.
+class _SheetFrame extends StatelessWidget {
+  const _SheetFrame({required this.header, required this.children, this.footer = const []});
+
+  /// While she is still choosing: "Cancelar" closes the sheet.
+  factory _SheetFrame.choosing(
+    BuildContext context, {
+    required List<Widget> children,
+    List<Widget> footer = const [],
+  }) {
+    return _SheetFrame(
+      header: _SheetHeader(isConfirmed: false, onClose: () => Navigator.of(context).pop()),
+      footer: footer,
+      children: children,
+    );
+  }
+
+  final Widget header;
+  final List<Widget> children;
+  final List<Widget> footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.94,
+        child: Column(
+          children: [
+            header,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                children: children,
+              ),
+            ),
+            if (footer.isNotEmpty) _SheetFooter(children: footer),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SheetHeader extends StatelessWidget {

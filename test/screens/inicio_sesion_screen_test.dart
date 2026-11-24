@@ -5,6 +5,7 @@ import 'package:calm_mobil/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_client_data.dart';
 import 'fake_client_access.dart';
 
 const ordersDestination = 'Pedidos destino';
@@ -224,13 +225,16 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('takes a first-time client to Servicios', (tester) async {
+  testWidgets('opens the booking sheet for a first-time client, not Servicios', (tester) async {
     await pumpEntrada(tester);
 
     await tester.tap(find.text('Agenda una cita'));
     await tester.pumpAndSettle();
 
-    expect(find.text(servicesDestination), findsOneWidget);
+    expect(find.text('Agendar cita'), findsOneWidget);
+    expect(find.text('Ajuste de cintura'), findsOneWidget);
+    expect(find.text(servicesDestination), findsNothing);
+    expect(find.text(ordersDestination), findsNothing);
   });
 
   testWidgets('opens with "Tu sesión terminó" after her session ended, until she edits', (tester) async {
@@ -256,7 +260,7 @@ const sessionEndedMessage = 'Tu sesión terminó. Vuelve a entrar.';
 
 Future<void> pumpEntrada(WidgetTester tester, {FakeClientAccess? access}) async {
   final clientAccess = access ?? FakeClientAccess();
-  await tester.pumpWidget(
+  await tester.pumpWidget(withClientData(
     MaterialApp(
       routes: {
         AppRoutes.initial: (_) => InicioSesionScreen(access: clientAccess),
@@ -264,7 +268,7 @@ Future<void> pumpEntrada(WidgetTester tester, {FakeClientAccess? access}) async 
         AppRoutes.services: (_) => const Text(servicesDestination),
       },
     ),
-  );
+  ));
 }
 
 Future<void> signIn(WidgetTester tester, {required String phone, required String nip}) async {

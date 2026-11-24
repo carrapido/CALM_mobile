@@ -153,6 +153,8 @@ class FakeClientData implements ClientData {
   @override
   Future<BookingOutcome> book(BookingRequest request) async {
     bookings.add(request);
+    // As the API does: a booking with her phone and NIP answers with a session for her.
+    if (bookingResult is BookingConfirmed && request.contact != null) signedIn = true;
     return bookingResult;
   }
 
