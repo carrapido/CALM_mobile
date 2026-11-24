@@ -13,8 +13,10 @@ class SupabaseConfig {
 
   static bool get isComplete => url.isNotEmpty && publishableKey.isNotEmpty;
 
-  /// What to tell whoever runs the app without the env file, instead of a stack trace.
+  /// What to tell whoever runs the app without the env file, instead of a stack trace. It also
+  /// names API_URL, which comes from the same file (see `ApiConfig`).
   static const missingMessage =
-      'Faltan las credenciales de Supabase. Copia env/supabase.example.json a env/supabase.json y '
-      'corre la app con --dart-define-from-file=env/supabase.json';
+      'Faltan las credenciales de Supabase o la URL de la API (API_URL). Copia '
+      'env/supabase.example.json a env/supabase.json y corre la app con '
+      '--dart-define-from-file=env/supabase.json';
 }

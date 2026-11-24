@@ -4,8 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/login_form.dart';
 import '../routes/app_routes.dart';
+import '../services/api_client.dart';
+import '../services/api_client_access.dart';
 import '../services/client_access.dart';
-import '../services/supabase_client_access.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
@@ -24,7 +25,7 @@ import '../widgets/top_app_bar_widget.dart';
 class InicioSesionScreen extends StatefulWidget {
   const InicioSesionScreen({super.key, this.access});
 
-  /// Who checks the phone and the NIP. Tests pass their own; the app talks to Supabase.
+  /// Who checks the phone and the NIP. Tests pass their own; the app talks to the CALM API.
   final ClientAccess? access;
 
   @override
@@ -36,7 +37,8 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   final _nipController = TextEditingController();
   final _nipFocus = FocusNode();
   late final ClientAccess _access =
-      widget.access ?? SupabaseClientAccess(Supabase.instance.client);
+      widget.access ??
+      ApiClientAccess(ApiClient.forSupabase(Supabase.instance.client), Supabase.instance.client);
   String? _message;
   LoginField? _invalidField;
   bool _isSigningIn = false;

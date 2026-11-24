@@ -75,6 +75,38 @@ class Order {
     return [for (final entry in listed) entry.order];
   }
 
+  /// What `GET /api/client/orders` answers, `{orders, appointments}` in camelCase, listed with the
+  /// same rules as [listFrom]: an appointment with `hasOrder` is left out, a past one too.
+  static List<Order> listFromApi(Map<String, dynamic> body, {required DateTime now}) {
+    String day(Object? value) => (value as String).substring(0, 10);
+    return listFrom(
+      orderRows: [
+        for (final order in (body['orders'] as List).cast<Map<String, dynamic>>())
+          {
+            'ticket': order['ticket'],
+            'work': order['work'],
+            'status': order['status'],
+            'final_price_mxn': order['finalPriceMxn'],
+            'delivery_date': day(order['deliveryDate']),
+          },
+      ],
+      appointmentRows: [
+        for (final appointment in (body['appointments'] as List).cast<Map<String, dynamic>>())
+          {
+            'ticket': appointment['ticket'],
+            'scheduled_date': day(appointment['date']),
+            'scheduled_time': appointment['time'],
+            'preliminary_total_mxn': appointment['preliminaryTotalMxn'],
+            'appointment_services': [
+              for (final name in appointment['services'] as List? ?? const []) {'services': {'name': name}},
+            ],
+            'orders': appointment['hasOrder'] == true ? const {'hasOrder': true} : null,
+          },
+      ],
+      now: now,
+    );
+  }
+
   static OrderStatus? _statusFrom(String value) {
     return switch (value) {
       'received' => OrderStatus.received,
