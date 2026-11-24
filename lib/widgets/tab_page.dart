@@ -14,12 +14,16 @@ class TabPage extends StatelessWidget {
     required this.children,
     this.backLabel,
     this.floatingBar,
+    this.showsTabBar = true,
   });
 
   final AppTab tab;
   final List<Widget> children;
   final String? backLabel;
   final Widget? floatingBar;
+
+  /// False when the tabs would lead a client without a session to screens that are not hers.
+  final bool showsTabBar;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,7 @@ class TabPage extends StatelessWidget {
         backLabel: backLabel,
         onHelpPressed: () => showHelpSheet(context),
       ),
-      bottomNavigationBar: AppTabBar(current: tab),
+      bottomNavigationBar: showsTabBar ? AppTabBar(current: tab) : null,
       body: _ScrollingContent(floatingBar: floatingBar, children: children),
     );
   }

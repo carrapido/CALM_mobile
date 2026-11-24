@@ -1,6 +1,8 @@
 import 'package:calm_mobil/models/catalog.dart';
 import 'package:calm_mobil/models/service_item.dart';
+import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/services_screen.dart';
+import 'package:calm_mobil/widgets/app_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -123,6 +125,49 @@ void main() {
     expect(find.text('Ajuste de cintura'), findsOneWidget);
     expect(data.loads, 2);
   });
+
+  testWidgets('keeps the tab bar with Reintentar when she is signed in but offline', (tester) async {
+    await pumpServices(tester, data: FakeClientData(signedIn: true)..fails = true);
+
+    expect(find.text(loadFailure), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(find.byType(AppTabBar), findsOneWidget);
+  });
+
+  testWidgets('shows no signed-in tab bar with the load failure when there is no session', (tester) async {
+    await pumpServices(tester, data: FakeClientData()..fails = true);
+
+    expect(find.text(loadFailure), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(find.byType(AppTabBar), findsNothing);
+    expect(find.text('Pedidos'), findsNothing);
+  });
+
+  testWidgets('takes her to Entrada, signed out, when her session ended', (tester) async {
+    final data = FakeClientData(signedIn: true)..sessionEnded = true;
+    await pumpServicesRoutes(tester, data);
+    await tester.pumpAndSettle();
+
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+    expect(find.text(loadFailure), findsNothing);
+  });
+}
+
+Future<void> pumpServicesRoutes(WidgetTester tester, FakeClientData data) async {
+  tester.view.physicalSize = const Size(390, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(withClientData(data: data,
+    MaterialApp(
+      initialRoute: AppRoutes.services,
+      routes: {
+        AppRoutes.initial: entradaDestination,
+        AppRoutes.services: (_) => const ServicesScreen(),
+      },
+    ),
+  ));
+  await tester.pump();
 }
 
 Future<void> pumpServices(WidgetTester tester, {FakeClientData? data}) async {

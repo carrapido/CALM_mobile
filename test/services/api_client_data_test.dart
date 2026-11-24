@@ -10,6 +10,7 @@ import 'package:calm_mobil/models/service_item.dart';
 import 'package:calm_mobil/models/service_selection.dart';
 import 'package:calm_mobil/services/api_client.dart';
 import 'package:calm_mobil/services/api_client_data.dart';
+import 'package:calm_mobil/services/client_data.dart';
 import 'package:calm_mobil/utils/app_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -100,6 +101,12 @@ void main() {
 
       await expectLater(dataOver(api).catalog(), throwsA(isA<ApiException>()));
     });
+
+    test('tells a session that could not be refreshed as ended', () async {
+      final api = FakeApi((_) => failure(401, 'signed_out'));
+
+      await expectLater(dataOver(api).catalog(), throwsA(isA<SessionEnded>()));
+    });
   });
 
   group('agenda', () {
@@ -134,6 +141,12 @@ void main() {
       expect(december.freeSlotsFor(1), isEmpty);
       expect(december.freeSlotsFor(2), isNot(contains('10:30')));
     });
+
+    test('tells a session that could not be refreshed as ended', () async {
+      final api = FakeApi((_) => failure(401, 'signed_out'));
+
+      await expectLater(dataOver(api).agenda(), throwsA(isA<SessionEnded>()));
+    });
   });
 
   group('profile', () {
@@ -148,10 +161,10 @@ void main() {
       expect(profile.phone, '998 123 4567');
     });
 
-    test('fails to load when her session is gone', () async {
+    test('tells a 401 signed_out as her session ended', () async {
       final api = FakeApi((_) => failure(401, 'signed_out'));
 
-      await expectLater(dataOver(api).profile(), throwsA(isA<ApiException>()));
+      await expectLater(dataOver(api).profile(), throwsA(isA<SessionEnded>()));
     });
   });
 
@@ -216,10 +229,16 @@ void main() {
       expect(orders.single.isCancellable, isFalse);
     });
 
-    test('fails to load when her session is gone', () async {
+    test('tells a 401 signed_out as her session ended', () async {
       final api = FakeApi((_) => failure(401, 'signed_out'));
 
-      await expectLater(dataOver(api).orders(), throwsA(isA<ApiException>()));
+      await expectLater(dataOver(api).orders(), throwsA(isA<SessionEnded>()));
+    });
+
+    test('keeps a network failure as a failure to load, not an ended session', () async {
+      final api = FakeApi((_) => throw http.ClientException('offline'));
+
+      await expectLater(dataOver(api).orders(), throwsA(isA<ApiUnreachable>()));
     });
   });
 
@@ -322,8 +341,7 @@ void main() {
 
       expect(await answer((_) => failure(409, 'appointment_not_cancellable')),
           isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.cancelRefused));
-      expect(await answer((_) => failure(401, 'signed_out')),
-          isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.bookingSignedOut));
+      expect(await answer((_) => failure(401, 'signed_out')), isA<ActionSignedOut>());
       for (final respond in <FutureOr<http.Response> Function(SentRequest)>[
         (_) => failure(500, 'internal'),
         (_) => throw http.ClientException('offline'),
@@ -352,8 +370,7 @@ void main() {
 
       expect(await answer((_) => failure(409, 'order_not_ready')),
           isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.onTheWayRefused));
-      expect(await answer((_) => failure(401, 'signed_out')),
-          isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.bookingSignedOut));
+      expect(await answer((_) => failure(401, 'signed_out')), isA<ActionSignedOut>());
       for (final respond in <FutureOr<http.Response> Function(SentRequest)>[
         (_) => failure(503, 'down'),
         (_) => throw http.ClientException('offline'),
@@ -400,9 +417,7 @@ void main() {
         (400, 'new_nip', isA<ProfileRefused>()
             .having((o) => o.message, 'message', 'Mensaje new_nip')
             .having((o) => o.field, 'field', ProfileField.newNip)),
-        (401, 'signed_out', isA<ProfileRefused>()
-            .having((o) => o.message, 'message', 'Mensaje signed_out')
-            .having((o) => o.field, 'field', isNull)),
+        (401, 'signed_out', isA<ProfileSignedOut>()),
         (429, 'throttled', isA<ProfileRefused>()
             .having((o) => o.message, 'message', AppConstants.signInThrottled)
             .having((o) => o.field, 'field', isNull)),

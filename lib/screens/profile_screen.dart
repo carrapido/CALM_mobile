@@ -21,6 +21,7 @@ import '../widgets/labeled_field_row.dart';
 import '../widgets/loaded.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/section_header.dart';
+import '../widgets/session_end.dart';
 import '../widgets/status_note.dart';
 import '../widgets/tab_page.dart';
 
@@ -32,9 +33,15 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final data = ClientDataScope.of(context);
     return Loaded<UserProfile>(
-      load: ClientDataScope.of(context).profile,
-      pending: (status) => TabPage(tab: AppTab.profile, children: [_heading, status]),
+      load: data.profile,
+      // A failure without a session shows no tabs: they would lead to screens that are not hers.
+      pending: (status, hasFailed) => TabPage(
+        tab: AppTab.profile,
+        showsTabBar: !hasFailed || data.isSignedIn,
+        children: [_heading, status],
+      ),
       builder: (_, profile) => _ProfileView(profile),
     );
   }
@@ -174,11 +181,14 @@ class _ProfileViewState extends State<_ProfileView> {
       ),
     );
     if (!mounted) return;
+    if (outcome is ProfileSignedOut) return endSession(context);
     setState(() {
       _isSaving = false;
       switch (outcome) {
         case ProfileSaved(:final profile):
           _keepChanges(profile);
+        case ProfileSignedOut():
+          break;
         case ProfileRefused(:final message, :final field):
           _refusal = message;
           _refusedField = field;

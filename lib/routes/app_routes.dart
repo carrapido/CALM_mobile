@@ -38,6 +38,7 @@ class AppRoutes {
       (AppRoutes.orders, _) => const OrdersScreen(),
       (AppRoutes.services, _) => const ServicesScreen(),
       (AppRoutes.profile, _) => const ProfileScreen(),
+      (AppRoutes.initial, final String notice) => InicioSesionScreen(notice: notice),
       _ => const InicioSesionScreen(),
     };
   }

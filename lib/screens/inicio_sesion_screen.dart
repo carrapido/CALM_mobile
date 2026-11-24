@@ -23,10 +23,13 @@ import '../widgets/top_app_bar_widget.dart';
 
 /// Entrada: the client signs in with phone and NIP, or starts booking a first appointment.
 class InicioSesionScreen extends StatefulWidget {
-  const InicioSesionScreen({super.key, this.access});
+  const InicioSesionScreen({super.key, this.access, this.notice});
 
   /// Who checks the phone and the NIP. Tests pass their own; the app talks to the CALM API.
   final ClientAccess? access;
+
+  /// Why she is here, such as her session having ended; shown until she edits the form.
+  final String? notice;
 
   @override
   State<InicioSesionScreen> createState() => _InicioSesionScreenState();
@@ -39,7 +42,7 @@ class _InicioSesionScreenState extends State<InicioSesionScreen> {
   late final ClientAccess _access =
       widget.access ??
       ApiClientAccess(ApiClient.forSupabase(Supabase.instance.client), Supabase.instance.client);
-  String? _message;
+  late String? _message = widget.notice;
   LoginField? _invalidField;
   bool _isSigningIn = false;
   bool _hadCompletePhone = false;

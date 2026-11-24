@@ -2,6 +2,7 @@ import 'package:calm_mobil/models/order.dart';
 import 'package:calm_mobil/routes/app_routes.dart';
 import 'package:calm_mobil/screens/orders_screen.dart';
 import 'package:calm_mobil/themes/app_colors.dart';
+import 'package:calm_mobil/widgets/app_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -26,14 +27,44 @@ void main() {
   });
 
   testWidgets('says when the orders cannot load', (tester) async {
-    await pumpOrders(tester, data: FakeClientData()..fails = true);
+    await pumpOrders(tester, data: FakeClientData(signedIn: true)..fails = true);
 
     expect(
       find.text('No pudimos cargar tus datos. Revisa tu internet e inténtalo de nuevo.'),
       findsOneWidget,
     );
-    // The heading and the tab bar stay while the orders cannot load.
+    // With her session open, the heading and the tab bar stay while she is offline.
     expect(find.text('Pedidos'), findsNWidgets(2));
+    expect(find.byType(AppTabBar), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+  });
+
+  testWidgets('shows no tab bar with the load failure when there is no session', (tester) async {
+    await pumpOrders(tester, data: FakeClientData()..fails = true);
+
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(find.byType(AppTabBar), findsNothing);
+    expect(find.text('Perfil'), findsNothing);
+  });
+
+  testWidgets('takes her to Entrada, signed out, when her session ended', (tester) async {
+    final data = FakeClientData(signedIn: true)..sessionEnded = true;
+    await tester.pumpWidget(withClientData(data: data,
+      MaterialApp(
+        initialRoute: AppRoutes.orders,
+        routes: {
+          AppRoutes.initial: entradaDestination,
+          AppRoutes.orders: (_) => const OrdersScreen(),
+        },
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+    expect(find.text('Reintentar'), findsNothing);
+    expect(find.byType(AppTabBar), findsNothing);
+    expect(tester.state<NavigatorState>(find.byType(Navigator)).canPop(), isFalse);
   });
 
   testWidgets('lists active and delivered orders as in the design', (tester) async {

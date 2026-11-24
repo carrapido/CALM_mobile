@@ -23,6 +23,7 @@ import 'inset_group.dart';
 import 'labeled_field_row.dart';
 import 'loaded.dart';
 import 'section_header.dart';
+import 'session_end.dart';
 import 'sheet_parts.dart';
 
 /// Opens "Agendar cita" for the marked repairs: day, time and the client's data, then the ticket.
@@ -40,7 +41,7 @@ Future<void> showScheduleSheet(BuildContext context, ServiceSelection selection)
     sheetAnimationStyle: sheetMotion(context),
     builder: (sheetContext) => Loaded<BookingMonths>(
       load: ClientDataScope.of(sheetContext).agenda,
-      pending: (status) => Padding(padding: const EdgeInsets.all(16), child: status),
+      pending: (status, _) => Padding(padding: const EdgeInsets.all(16), child: status),
       builder: (_, months) => months.opening == null
           ? const _NoFreeSlots()
           : ScheduleSheet(
@@ -315,11 +316,7 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
     ];
   }
 
-  Future<void> _signInAgain() async {
-    await ClientDataScope.of(context).signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
-  }
+  Future<void> _signInAgain() => endSession(context);
 
   /// The form's own rules first; only complete data is worth a trip to the workshop.
   Future<void> _confirm() async {

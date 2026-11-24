@@ -173,6 +173,30 @@ void main() {
     expect(find.text('Guardamos tus cambios'), findsNothing);
   });
 
+  testWidgets('takes her to Entrada, signed out, when her session ended on load', (tester) async {
+    final data = FakeClientData(signedIn: true)..sessionEnded = true;
+    await pumpProfile(tester, data: data);
+    await tester.pumpAndSettle();
+
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+    expect(find.text('Reintentar'), findsNothing);
+  });
+
+  testWidgets('takes her to Entrada, signed out, when her session ended on save', (tester) async {
+    final data = FakeClientData(signedIn: true, profileSaveResult: const ProfileSignedOut());
+    await pumpProfile(tester, data: data);
+
+    await tester.enterText(phoneField, '9981234567');
+    await tester.tap(find.text('Guardar cambios'));
+    await tester.pumpAndSettle();
+
+    expect(data.profileChanges, hasLength(1));
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+    expect(tester.state<NavigatorState>(find.byType(Navigator)).canPop(), isFalse);
+  });
+
   testWidgets('ends the session when signing out', (tester) async {
     final data = FakeClientData();
     await pumpProfile(tester, data: data);
@@ -210,7 +234,7 @@ Future<void> pumpProfile(WidgetTester tester, {FakeClientData? data}) async {
     MaterialApp(
       initialRoute: AppRoutes.profile,
       routes: {
-        AppRoutes.initial: (_) => const Text('entrada destino'),
+        AppRoutes.initial: entradaDestination,
         AppRoutes.profile: (_) => const ProfileScreen(),
       },
     ),

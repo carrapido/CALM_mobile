@@ -46,6 +46,14 @@ abstract interface class ClientData {
   Future<void> signOut();
 }
 
+/// A read found her session ended: the workshop no longer knows who she is.
+class SessionEnded implements Exception {
+  const SessionEnded();
+
+  @override
+  String toString() => 'SessionEnded';
+}
+
 /// Hands [data] to every screen below it, including the ones pushed as routes or sheets.
 class ClientDataScope extends InheritedWidget {
   const ClientDataScope({super.key, required this.data, required super.child});

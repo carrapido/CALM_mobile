@@ -29,9 +29,15 @@ class ServicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final data = ClientDataScope.of(context);
     return Loaded<Catalog>(
-      load: ClientDataScope.of(context).catalog,
-      pending: (status) => TabPage(tab: AppTab.services, children: [_heading, status]),
+      load: data.catalog,
+      // A failure without a session shows no tabs: they would lead to screens that are not hers.
+      pending: (status, hasFailed) => TabPage(
+        tab: AppTab.services,
+        showsTabBar: !hasFailed || data.isSignedIn,
+        children: [_heading, status],
+      ),
       builder: (_, catalog) => _CatalogView(catalog),
     );
   }

@@ -16,6 +16,7 @@ import '../widgets/icon_row.dart';
 import '../widgets/inset_group.dart';
 import '../widgets/page_heading.dart';
 import '../widgets/section_header.dart';
+import '../widgets/session_end.dart';
 import '../widgets/status_note.dart';
 import '../widgets/tab_page.dart';
 
@@ -129,6 +130,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _isActing = true);
     final outcome = await ClientDataScope.of(context).markOnMyWay(_order.ticket);
     if (!mounted) return;
+    if (outcome is ActionSignedOut) return endSession(context);
     setState(() {
       _isActing = false;
       switch (outcome) {
@@ -137,6 +139,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _onTheWayRefusal = null;
         case ActionRefused(:final message):
           _onTheWayRefusal = message;
+        case ActionSignedOut():
+          break;
       }
     });
   }
@@ -191,6 +195,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     switch (outcome) {
       case ActionDone():
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false);
+      case ActionSignedOut():
+        await endSession(context);
       case ActionRefused(:final message):
         setState(() {
           _isActing = false;

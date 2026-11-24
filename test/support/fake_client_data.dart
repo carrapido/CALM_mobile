@@ -133,6 +133,9 @@ class FakeClientData implements ClientData {
   final profileChanges = <ProfileChange>[];
   int signOuts = 0;
   bool fails = false;
+
+  /// Every load finds her session ended, as a 401 `signed_out` or a refresh the server refused.
+  bool sessionEnded = false;
   int loads = 0;
 
   @override
@@ -177,10 +180,20 @@ class FakeClientData implements ClientData {
 
   Future<T> _answer<T>(T result) async {
     loads++;
+    if (sessionEnded) throw const SessionEnded();
     if (fails) throw StateError('the fake database is down');
     return result;
   }
 }
+
+/// Entrada as the tests stand it in: it shows the notice it was opened with, if any.
+Widget entradaDestination(BuildContext context) {
+  final notice = ModalRoute.of(context)!.settings.arguments;
+  return Text(notice == null ? 'entrada destino' : 'entrada destino: $notice');
+}
+
+/// What Entrada shows after her session ended.
+const sessionEndedAtEntrada = 'entrada destino: Tu sesión terminó. Vuelve a entrar.';
 
 /// [app] with [data] above it, as `main` provides the real one.
 Widget withClientData(Widget app, {ClientData? data}) {
