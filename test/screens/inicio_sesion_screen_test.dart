@@ -232,7 +232,27 @@ void main() {
 
     expect(find.text(servicesDestination), findsOneWidget);
   });
+
+  testWidgets('opens with "Tu sesión terminó" after her session ended, until she edits', (tester) async {
+    await tester.pumpWidget(const MaterialApp(onGenerateRoute: AppRoutes.onGenerateRoute));
+    expect(find.text(sessionEndedMessage), findsNothing);
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushNamedAndRemoveUntil(AppRoutes.initial, (_) => false, arguments: sessionEndedMessage);
+    await tester.pumpAndSettle();
+
+    expect(find.text(sessionEndedMessage), findsOneWidget);
+    expect(find.text('Ver mis pedidos'), findsOneWidget);
+
+    await tester.enterText(phoneField, '998');
+    await tester.pump();
+
+    expect(find.text(sessionEndedMessage), findsNothing);
+  });
 }
+
+const sessionEndedMessage = 'Tu sesión terminó. Vuelve a entrar.';
 
 Future<void> pumpEntrada(WidgetTester tester, {FakeClientAccess? access}) async {
   final clientAccess = access ?? FakeClientAccess();

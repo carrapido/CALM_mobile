@@ -21,6 +21,11 @@ class ProfileSaved extends ProfileUpdateOutcome {
   final UserProfile profile;
 }
 
+/// Not saved: her session ended, so she has to sign in again.
+class ProfileSignedOut extends ProfileUpdateOutcome {
+  const ProfileSignedOut();
+}
+
 /// Refused for a reason worded for the client; [field] turns red when it is one of hers.
 class ProfileRefused extends ProfileUpdateOutcome {
   const ProfileRefused(this.message, {this.field});

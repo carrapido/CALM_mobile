@@ -5,9 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/api_config.dart';
+import '../utils/app_constants.dart';
 
-/// The access token of the session open on this device, or null without one.
-typedef AccessToken = String? Function();
+/// The access token to send for the session open on this device, or null without one.
+///
+/// It may throw [ApiUnreachable], [ApiTimeout] or [ApiException.signedOut] when the session
+/// needed a refresh that could not be done.
+typedef AccessToken = FutureOr<String?> Function();
 
 /// Installs a session on this device from a refresh token.
 typedef SessionInstaller = Future<void> Function(String refreshToken);
@@ -28,10 +32,58 @@ class ApiClient {
 
   /// [ApiConfig.url], with the token of the session Supabase Auth keeps on this device.
   factory ApiClient.forSupabase(SupabaseClient supabase) {
+    return ApiClient.forAuth(supabase.auth, baseUrl: ApiConfig.url);
+  }
+
+  /// [baseUrl], with the access token of [auth]'s session, refreshed first when it is missing,
+  /// expired or about to expire.
+  ///
+  /// Supabase only refreshes in the background while the app is in the foreground, and a refresh
+  /// that failed for the network keeps the expired session; sending that token would make the API
+  /// answer 401 `signed_out` to a client who is still signed in.
+  factory ApiClient.forAuth(
+    GoTrueClient auth, {
+    required String baseUrl,
+    http.Client? httpClient,
+    Duration timeout = defaultTimeout,
+  }) {
     return ApiClient(
-      baseUrl: ApiConfig.url,
-      accessToken: () => supabase.auth.currentSession?.accessToken,
+      baseUrl: baseUrl,
+      accessToken: () => _freshAccessToken(auth, timeout),
+      httpClient: httpClient,
+      timeout: timeout,
     );
+  }
+
+  /// A token closer than this to its expiry is refreshed before it is sent.
+  static const refreshMargin = Duration(seconds: 60);
+
+  static Future<String?> _freshAccessToken(GoTrueClient auth, Duration timeout) async {
+    final session = auth.currentSession;
+    if (session == null) return null;
+    if (session.accessToken.isNotEmpty && !_expiresSoon(session.expiresAt)) return session.accessToken;
+
+    final Session? refreshed;
+    try {
+      refreshed = (await auth.refreshSession().timeout(timeout)).session;
+    } on TimeoutException {
+      throw const ApiTimeout();
+    } on AuthRetryableFetchException catch (cause) {
+      // No network or Supabase failing: the session stays on the device for the next try.
+      throw ApiUnreachable(cause);
+    } on AuthException {
+      // The refresh token is no longer valid (Supabase already dropped the session) or missing.
+      throw ApiException.signedOut;
+    }
+    final token = refreshed?.accessToken;
+    if (token == null || token.isEmpty) throw ApiException.signedOut;
+    return token;
+  }
+
+  static bool _expiresSoon(int? expiresAt) {
+    if (expiresAt == null) return false;
+    final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    return !DateTime.now().add(refreshMargin).isBefore(expiry);
   }
 
   /// Past this, a stalled connection is told as unavailable instead of a button that never answers.
@@ -53,7 +105,7 @@ class ApiClient {
   Future<Object?> _send(String method, String path, [Object? body]) async {
     final request = http.Request(method, Uri.parse('$_baseUrl$path'));
     request.headers['Accept'] = 'application/json';
-    final token = _accessToken();
+    final token = await _accessToken();
     if (token != null && token.isNotEmpty) request.headers['Authorization'] = 'Bearer $token';
     if (body != null) {
       request.headers['Content-Type'] = 'application/json; charset=utf-8';
@@ -97,6 +149,10 @@ class ApiException implements Exception {
       message: error is String ? error : null,
     );
   }
+
+  /// Her session ended: what the API answers for a token it no longer takes, and what a refresh
+  /// Supabase refused is told as.
+  static const signedOut = ApiException(401, code: 'signed_out', message: AppConstants.bookingSignedOut);
 
   final int status;
   final String? code;

@@ -50,26 +50,39 @@ class ApiClientData implements ClientData {
   /// Only the active services, by id, with or without a session.
   @override
   Future<Catalog> catalog() async {
-    return Catalog.fromApi(await api.get('/client/services') as List<Object?>);
+    return Catalog.fromApi(await _read('/client/services') as List<Object?>);
   }
 
   /// Only her own orders and appointments: the API reads who she is from her token.
   @override
   Future<List<Order>> orders() async {
-    final body = await api.get('/client/orders') as Map<String, dynamic>;
+    final body = await _read('/client/orders') as Map<String, dynamic>;
     return Order.listFromApi(body, now: _now());
   }
 
   @override
   Future<UserProfile> profile() async {
-    return UserProfile.fromRow(await api.get('/client/profile') as Map<String, dynamic>);
+    return UserProfile.fromRow(await _read('/client/profile') as Map<String, dynamic>);
   }
 
   /// Cancún's "today" and "now", and booked slots that carry no client.
   @override
   Future<BookingMonths> agenda() async {
-    return BookingMonths.fromApi(await api.get('/client/booking-calendar') as Map<String, dynamic>);
+    return BookingMonths.fromApi(await _read('/client/booking-calendar') as Map<String, dynamic>);
   }
+
+  /// A 401 `signed_out` (her token was refused, or her session could not be refreshed) is her
+  /// session ending, never a failure to load; any other failure stays as it is.
+  Future<Object?> _read(String path) async {
+    try {
+      return await api.get(path);
+    } on ApiException catch (failure) {
+      if (_endsSession(failure)) throw const SessionEnded();
+      rethrow;
+    }
+  }
+
+  static bool _endsSession(ApiException failure) => failure.status == 401 && failure.code == 'signed_out';
 
   /// The API decides the slot, the total and the ticket. Without a session it answers with a
   /// refresh token so the client is signed in as the owner of her new appointment; with one, her
@@ -118,11 +131,13 @@ class ApiClientData implements ClientData {
 
   /// The API answers 409 when the rule refuses (`appointment_not_cancellable`, `order_not_ready`),
   /// so a refusal is never mistaken for a success and is told apart from a failure to reach it.
+  /// A 401 `signed_out` means her session ended.
   Future<ClientActionOutcome> _act(Future<Object?> Function() send, {required String refusal}) async {
     try {
       await send();
       return const ActionDone();
     } on ApiException catch (failure) {
+      if (_endsSession(failure)) return const ActionSignedOut();
       return ActionRefused(failure.status == 409 ? refusal : AppConstants.signInUnavailable);
     } catch (_) {
       return const ActionRefused(AppConstants.signInUnavailable);
@@ -173,6 +188,8 @@ class ApiClientData implements ClientData {
 
   /// The refusals carry the wording of Perfil's own form; the code says which field it is about.
   static ProfileUpdateOutcome _profileRefusalFor(ApiException failure) {
+    // The code alone decides here, as it did before the session-ended outcome existed.
+    if (failure.code == 'signed_out') return const ProfileSignedOut();
     final worded = failure.message;
     final message = worded == null || worded.isEmpty ? AppConstants.signInUnavailable : worded;
     return switch ((failure.status, failure.code)) {
@@ -180,7 +197,6 @@ class ApiClientData implements ClientData {
       (_, 'phone' || 'phone_taken') => ProfileRefused(message, field: ProfileField.phone),
       (_, 'current_nip') => ProfileRefused(message, field: ProfileField.currentNip),
       (_, 'new_nip') => ProfileRefused(message, field: ProfileField.newNip),
-      (_, 'signed_out') => ProfileRefused(message),
       _ => const ProfileRefused(AppConstants.signInUnavailable),
     };
   }

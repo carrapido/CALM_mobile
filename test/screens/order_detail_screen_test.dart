@@ -98,6 +98,19 @@ void main() {
     expect(find.text('Voy en camino'), findsOneWidget);
   });
 
+  testWidgets('takes her to Entrada, signed out, when her session ended on "Voy en camino"', (tester) async {
+    final data = FakeClientData(signedIn: true, actionResult: const ActionSignedOut());
+    await pumpDetail(tester, readyOrder, data: data);
+
+    await tester.tap(find.text('Voy en camino'));
+    await tester.pumpAndSettle();
+
+    expect(data.onTheWayTickets, ['7720']);
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+    expect(tester.state<NavigatorState>(find.byType(Navigator)).canPop(), isFalse);
+  });
+
   testWidgets('shows an order the client is already on her way to', (tester) async {
     const onTheWay = Order(
       ticket: '7720',
@@ -207,6 +220,20 @@ void main() {
     expect(find.text('entrada destino'), findsOneWidget);
   });
 
+  testWidgets('takes her to Entrada, signed out, when her session ended on "Cancelar cita"', (tester) async {
+    final data = FakeClientData(signedIn: true, actionResult: const ActionSignedOut());
+    await pumpDetail(tester, appointment, data: data);
+
+    await tester.tap(find.text('Cancelar cita'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sí, cancelar la cita'));
+    await tester.pumpAndSettle();
+
+    expect(data.cancelledTickets, ['0937']);
+    expect(data.signOuts, 1);
+    expect(find.text(sessionEndedAtEntrada), findsOneWidget);
+  });
+
   testWidgets('cancels this appointment on the server', (tester) async {
     final data = FakeClientData();
     await pumpDetail(tester, appointment, data: data);
@@ -277,7 +304,7 @@ Future<void> pumpDetail(WidgetTester tester, Order order, {FakeClientData? data}
     MaterialApp(
       initialRoute: '${AppRoutes.orders}/detalle',
       routes: {
-        AppRoutes.initial: (_) => const Text('entrada destino'),
+        AppRoutes.initial: entradaDestination,
         AppRoutes.orders: (_) => const Text('pedidos destino'),
         '${AppRoutes.orders}/detalle': (_) => OrderDetailScreen(order: order),
         AppRoutes.services: (_) => const Text('servicios destino'),

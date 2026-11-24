@@ -1,7 +1,10 @@
 # Local environment
 
 `env/supabase.json` holds the Supabase project this app keeps the client's session with and the
-URL of the CALM API it reads and writes her data through. It is git-ignored: no credential is ever
+URL of the CALM API it reads and writes her data through. The app never reads Supabase tables nor
+calls edge functions or RPCs: every screen goes through the CALM API (see the section "API de la
+app de clientas" of [CALM_web/docs/api.md](../../CALM_web/docs/api.md#api-de-la-app-de-clientas)
+and the [CALM_web README](../../CALM_web/README.md)). It is git-ignored: no credential is ever
 committed, not even the publishable key.
 
 Copy the example and fill it with the values of the CALM project (Supabase dashboard →
@@ -26,7 +29,7 @@ allowed to `10.0.2.2`, `localhost` and `127.0.0.1` (see
 there or an HTTPS URL. With `adb reverse tcp:3000 tcp:3000` a physical phone can also use
 `http://localhost:3000/api`.
 
-Then run the app with the file:
+Then, with the backend running and an Android emulator started, run the app with the file:
 
 ```bash
 flutter run --dart-define-from-file=env/supabase.json

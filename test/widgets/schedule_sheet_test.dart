@@ -301,6 +301,25 @@ void main() {
     expect(data.signOuts, 1);
     expect(find.text('Agendar cita'), findsNothing);
     expect(find.text('abrir hoja'), findsOneWidget);
+    expect(find.text('aviso: Tu sesión terminó. Vuelve a entrar.'), findsOneWidget);
+  });
+
+  testWidgets('takes her to Entrada, signed out, when her session ended loading the agenda', (tester) async {
+    final data = FakeClientData(signedIn: true)..sessionEnded = true;
+    await openSheet(tester, data: data);
+
+    expect(data.signOuts, 1);
+    expect(find.text('Agendar cita'), findsNothing);
+    expect(find.text('Reintentar'), findsNothing);
+    expect(find.text('aviso: Tu sesión terminó. Vuelve a entrar.'), findsOneWidget);
+  });
+
+  testWidgets('keeps Reintentar when the agenda cannot load for the network', (tester) async {
+    final data = FakeClientData(signedIn: true)..fails = true;
+    await openSheet(tester, data: data);
+
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(data.signOuts, 0);
   });
 
   testWidgets('says when the agenda cannot load', (tester) async {
@@ -321,9 +340,14 @@ Future<void> openSheet(WidgetTester tester, {FakeClientData? data}) async {
     MaterialApp(
       routes: {
         AppRoutes.initial: (context) => Scaffold(
-              body: TextButton(
-                onPressed: () => showScheduleSheet(context, waistSelection),
-                child: const Text('abrir hoja'),
+              body: Column(
+                children: [
+                  TextButton(
+                    onPressed: () => showScheduleSheet(context, waistSelection),
+                    child: const Text('abrir hoja'),
+                  ),
+                  if (ModalRoute.of(context)!.settings.arguments case final notice?) Text('aviso: $notice'),
+                ],
               ),
             ),
         AppRoutes.order: (context) {

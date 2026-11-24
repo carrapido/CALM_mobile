@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
+import '../services/client_data.dart';
 import '../themes/app_theme.dart';
 import '../utils/app_constants.dart';
 import 'action_button.dart';
+import 'session_end.dart';
 
 /// Shows what [load] brings, a spinner while it comes, and a way to try again when it fails.
 ///
 /// [pending] frames the spinner or the failure, so a screen keeps its header and tab bar while
-/// its data is on the way.
+/// its data is on the way; it is told whether the load failed.
+///
+/// A load that finds her session ended shows no failure: it signs her out and opens Entrada.
+typedef PendingFrame = Widget Function(Widget status, bool hasFailed);
+
 class Loaded<T> extends StatefulWidget {
   const Loaded({super.key, required this.load, required this.builder, this.pending});
 
   final Future<T> Function() load;
   final Widget Function(BuildContext context, T data) builder;
-  final Widget Function(Widget status)? pending;
+  final PendingFrame? pending;
 
   @override
   State<Loaded<T>> createState() => _LoadedState<T>();
@@ -34,8 +40,9 @@ class _LoadedState<T> extends State<Loaded<T>> {
   @override
   Widget build(BuildContext context) {
     if (_phase == _Phase.loaded) return widget.builder(context, _data);
-    final status = _phase == _Phase.failed ? _LoadFailure(onRetry: _retry) : const _Loading();
-    return widget.pending?.call(status) ?? status;
+    final hasFailed = _phase == _Phase.failed;
+    final status = hasFailed ? _LoadFailure(onRetry: _retry) : const _Loading();
+    return widget.pending?.call(status, hasFailed) ?? status;
   }
 
   Future<void> _load() async {
@@ -46,6 +53,9 @@ class _LoadedState<T> extends State<Loaded<T>> {
         _data = data;
         _phase = _Phase.loaded;
       });
+    } on SessionEnded {
+      // The spinner stays until Entrada replaces this screen.
+      if (mounted) await endSession(context);
     } catch (_) {
       if (mounted) setState(() => _phase = _Phase.failed);
     }

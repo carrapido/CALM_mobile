@@ -22,9 +22,15 @@ class OrdersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final data = ClientDataScope.of(context);
     return Loaded<List<Order>>(
-      load: ClientDataScope.of(context).orders,
-      pending: (status) => TabPage(tab: AppTab.orders, children: [_heading, status]),
+      load: data.orders,
+      // A failure without a session shows no tabs: they would lead to screens that are not hers.
+      pending: (status, hasFailed) => TabPage(
+        tab: AppTab.orders,
+        showsTabBar: !hasFailed || data.isSignedIn,
+        children: [_heading, status],
+      ),
       builder: (_, orders) => _OrdersView(orders),
     );
   }
