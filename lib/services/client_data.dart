@@ -11,7 +11,7 @@ import '../models/user_profile.dart';
 /// What the client's screens read from the workshop and ask it to do, without knowing where it
 /// lives.
 ///
-/// Row level security and the workshop's functions decide what the client reaches and may change;
+/// The CALM API decides what the client reaches and may change from her session's access token;
 /// this interface only names what each screen needs. See `odd/tasks/datos-reales-cliente.md` and
 /// `odd/tasks/acciones-cliente.md`.
 abstract interface class ClientData {

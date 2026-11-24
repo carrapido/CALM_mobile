@@ -118,12 +118,17 @@ class ApiClientData implements ClientData {
 
   /// The API answers 409 when the rule refuses (`appointment_not_cancellable`, `order_not_ready`),
   /// so a refusal is never mistaken for a success and is told apart from a failure to reach it.
+  /// A 401 `signed_out` means her session ended, told as booking tells it.
   Future<ClientActionOutcome> _act(Future<Object?> Function() send, {required String refusal}) async {
     try {
       await send();
       return const ActionDone();
     } on ApiException catch (failure) {
-      return ActionRefused(failure.status == 409 ? refusal : AppConstants.signInUnavailable);
+      return ActionRefused(switch ((failure.status, failure.code)) {
+        (409, _) => refusal,
+        (401, 'signed_out') => AppConstants.bookingSignedOut,
+        _ => AppConstants.signInUnavailable,
+      });
     } catch (_) {
       return const ActionRefused(AppConstants.signInUnavailable);
     }

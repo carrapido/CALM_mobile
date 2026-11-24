@@ -315,15 +315,16 @@ void main() {
       expect(api.sent.single.path, '/api/client/appointments/4821');
     });
 
-    test('words the 24 h refusal and any failure', () async {
+    test('words the 24 h refusal, an ended session and any failure', () async {
       Future<ClientActionOutcome> answer(FutureOr<http.Response> Function(SentRequest) respond) {
         return dataOver(FakeApi(respond)).cancelAppointment('4821');
       }
 
       expect(await answer((_) => failure(409, 'appointment_not_cancellable')),
           isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.cancelRefused));
+      expect(await answer((_) => failure(401, 'signed_out')),
+          isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.bookingSignedOut));
       for (final respond in <FutureOr<http.Response> Function(SentRequest)>[
-        (_) => failure(401, 'signed_out'),
         (_) => failure(500, 'internal'),
         (_) => throw http.ClientException('offline'),
       ]) {
@@ -344,15 +345,16 @@ void main() {
       expect(api.sent.single.path, '/api/client/orders/7720/on-my-way');
     });
 
-    test('words the not-ready refusal and any failure', () async {
+    test('words the not-ready refusal, an ended session and any failure', () async {
       Future<ClientActionOutcome> answer(FutureOr<http.Response> Function(SentRequest) respond) {
         return dataOver(FakeApi(respond)).markOnMyWay('7720');
       }
 
       expect(await answer((_) => failure(409, 'order_not_ready')),
           isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.onTheWayRefused));
+      expect(await answer((_) => failure(401, 'signed_out')),
+          isA<ActionRefused>().having((o) => o.message, 'message', AppConstants.bookingSignedOut));
       for (final respond in <FutureOr<http.Response> Function(SentRequest)>[
-        (_) => failure(401, 'signed_out'),
         (_) => failure(503, 'down'),
         (_) => throw http.ClientException('offline'),
       ]) {
