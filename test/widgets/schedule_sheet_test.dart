@@ -79,6 +79,13 @@ void main() {
     expect(find.text('Escribe tu nombre.'), findsOneWidget);
   });
 
+  testWidgets('shows generic examples in the empty contact fields', (tester) async {
+    await openSheet(tester);
+
+    expect(find.text('Tu nombre'), findsOneWidget);
+    expect(find.text('998 XXX XXXX'), findsOneWidget);
+  });
+
   testWidgets('confirms the appointment and shows its ticket', (tester) async {
     await openSheet(tester);
 

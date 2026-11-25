@@ -169,8 +169,12 @@ void main() {
     expect(find.text('Cómo llegar'), findsOneWidget);
   });
 
-  testWidgets('offers to write to the workshop while the order is in progress', (tester) async {
-    await pumpDetail(tester, inProgressOrder);
+  testWidgets('writes to the workshop on WhatsApp while the order is in progress', (tester) async {
+    final opened = <Uri>[];
+    await pumpDetail(tester, inProgressOrder, openLink: (link) async {
+      opened.add(link);
+      return true;
+    });
 
     expect(find.text('Voy en camino'), findsNothing);
     expect(find.text('Cómo llegar'), findsNothing);
@@ -178,7 +182,19 @@ void main() {
     await tester.tap(find.text('Escribir al taller'));
     await tester.pumpAndSettle();
 
-    expect(find.text('¿Te ayudamos?'), findsOneWidget);
+    expect(opened, [Uri.parse('https://wa.me/529983259560')]);
+    expect(find.text('¿Te ayudamos?'), findsNothing);
+    expect(find.textContaining('No pudimos abrir'), findsNothing);
+  });
+
+  testWidgets('says so, with the number, when WhatsApp cannot open', (tester) async {
+    await pumpDetail(tester, inProgressOrder, openLink: (_) async => false);
+
+    await tester.tap(find.text('Escribir al taller'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No pudimos abrir WhatsApp. Escríbenos al 998 325 9560'), findsOneWidget);
+    expect(find.text('Escribir al taller'), findsOneWidget);
   });
 
   testWidgets('shows an appointment with its quote and no progress bar', (tester) async {

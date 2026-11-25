@@ -6,7 +6,7 @@ import '../utils/app_constants.dart';
 /// Opens [link] outside the app; true when something took it.
 typedef LinkOpener = Future<bool> Function(Uri link);
 
-/// Hands the Maps app or the browser the link, never an in-app web view. A platform that cannot
+/// Hands the Maps app, WhatsApp, the dialer or the browser the link, never an in-app web view. A platform that cannot
 /// open it answers false instead of failing.
 Future<bool> openExternally(Uri link) async {
   try {
@@ -19,6 +19,16 @@ Future<bool> openExternally(Uri link) async {
 /// "Cómo llegar": the workshop on Google Maps, in the Maps app or the browser.
 Future<bool> openWorkshopMap(BuildContext context) {
   return LinkOpenerScope.of(context)(Uri.parse(AppConstants.workshopMapsUrl));
+}
+
+/// "Escribir al taller": a WhatsApp chat with the workshop's phone.
+Future<bool> openWorkshopWhatsApp(BuildContext context) {
+  return LinkOpenerScope.of(context)(Uri.parse(AppConstants.workshopWhatsAppUrl));
+}
+
+/// "Llamar al taller": the dialer with the workshop's phone.
+Future<bool> callWorkshop(BuildContext context) {
+  return LinkOpenerScope.of(context)(Uri.parse(AppConstants.workshopCallUrl));
 }
 
 /// Gives the screens below it the way links leave the app; tests put a stand-in here to see the

@@ -125,6 +125,15 @@ void main() {
     expect(find.text('Guardamos tus cambios'), findsOneWidget);
   });
 
+  testWidgets('shows a generic phone example once the number is erased', (tester) async {
+    await pumpProfile(tester);
+
+    await tester.enterText(phoneField, '');
+    await tester.pump();
+
+    expect(find.text('998 XXX XXXX'), findsOneWidget);
+  });
+
   testWidgets('brings the button back on the next edit', (tester) async {
     await pumpProfile(tester);
     await tester.tap(find.text('Guardar cambios'));
