@@ -13,7 +13,6 @@ import '../widgets/action_button.dart';
 import '../widgets/app_tab_bar.dart';
 import '../widgets/destructive_row.dart';
 import '../widgets/form_alert.dart';
-import '../widgets/help_sheet.dart';
 import '../widgets/icon_row.dart';
 import '../widgets/inset_group.dart';
 import '../widgets/page_heading.dart';
@@ -36,6 +35,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   late bool _isOnTheWay = widget.order.status == OrderStatus.onTheWay;
   bool _directionsOpened = false;
   bool _directionsFailed = false;
+  bool _whatsAppFailed = false;
   bool _isActing = false;
 
   // What the workshop refused, shown where the client asked.
@@ -109,8 +109,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (showsDirections)
         _directionsAction()
       else
-        ActionButton.tinted(label: 'Escribir al taller', onPressed: () => showHelpSheet(context)),
+        _writeAction(),
     ];
+  }
+
+  // WhatsApp takes over when it opens; when nothing takes the link, the number is there instead.
+  Widget _writeAction() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_whatsAppFailed) const FormAlert(AppConstants.whatsAppFailed),
+        ActionButton.tinted(label: AppConstants.writeToWorkshop, onPressed: _writeToWorkshop),
+      ],
+    );
+  }
+
+  Future<void> _writeToWorkshop() async {
+    final opened = await openWorkshopWhatsApp(context);
+    if (!mounted) return;
+    setState(() => _whatsAppFailed = !opened);
   }
 
   Widget _onTheWayAction() {

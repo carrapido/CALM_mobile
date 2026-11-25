@@ -6,7 +6,7 @@ class AppConstants {
   static const String loginSubtitle = 'Entra con tu celular y tu NIP. El NIP es tu contraseña';
   static const String labelPhone = 'Celular';
   static const String labelNip = 'NIP';
-  static const String hintPhone = '998 123 4567';
+  static const String hintPhone = '998 XXX XXXX';
   static const String hintNip = '4 dígitos';
   static const String btnVerPedidos = 'Ver mis pedidos';
   static const String btnOlvideNip = 'Olvidé mi NIP';
@@ -59,6 +59,15 @@ class AppConstants {
   static const String workshopMapsUrl = 'https://maps.app.goo.gl/nGsvenuYn4VE4rBfA?g_st=aw';
   static const String directionsOpened = 'Abrimos Mapas con la dirección';
   static const String directionsFailed = 'No pudimos abrir Mapas. Estamos en $workshopAddress';
+
+  // How to reach the workshop (CALM_web odd/tasks/borrar-clientes-contacto.md S1): the one place
+  // for its phone, read as "998 325 9560", written to on WhatsApp and dialed with +52.
+  static const String workshopPhone = '998 325 9560';
+  static const String workshopWhatsAppUrl = 'https://wa.me/529983259560';
+  static const String workshopCallUrl = 'tel:+529983259560';
+  static const String writeToWorkshop = 'Escribir al taller';
+  static const String whatsAppFailed = 'No pudimos abrir WhatsApp. Escríbenos al $workshopPhone';
+  static const String callFailed = 'No pudimos abrir el teléfono. Llámanos al $workshopPhone';
 
   // Servicios
   static const String servicesTitle = 'Servicios';

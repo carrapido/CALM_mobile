@@ -393,7 +393,7 @@ class _ScheduleSheetState extends State<ScheduleSheet> {
         ),
         LabeledFieldRow(
           label: 'Celular',
-          hint: '998 123 4567',
+          hint: AppConstants.hintPhone,
           controller: _phoneController,
           isInvalid: invalidField == BookingField.phone,
           keyboardType: TextInputType.phone,

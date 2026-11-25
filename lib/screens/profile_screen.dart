@@ -10,6 +10,7 @@ import '../routes/app_routes.dart';
 import '../services/client_data.dart';
 import '../themes/app_colors.dart';
 import '../themes/app_theme.dart';
+import '../utils/app_constants.dart';
 import '../utils/telefono_formatter.dart';
 import '../widgets/action_button.dart';
 import '../widgets/app_tab_bar.dart';
@@ -109,7 +110,7 @@ class _ProfileViewState extends State<_ProfileView> {
   Widget _phoneRow(ProfileField? invalidField) {
     return LabeledFieldRow(
       label: 'Número',
-      hint: '998 123 4567',
+      hint: AppConstants.hintPhone,
       controller: _phoneController,
       labelWidth: _labelWidth,
       isInvalid: invalidField == ProfileField.phone,

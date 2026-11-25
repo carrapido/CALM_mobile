@@ -71,6 +71,13 @@ void main() {
     expect(find.text(phoneMissingMessage), findsNothing);
   });
 
+  testWidgets('shows generic examples in the empty fields', (tester) async {
+    await pumpEntrada(tester);
+
+    expect(find.text('998 XXX XXXX'), findsOneWidget);
+    expect(find.text('4 dígitos'), findsOneWidget);
+  });
+
   testWidgets('groups the phone digits while typing', (tester) async {
     await pumpEntrada(tester);
 

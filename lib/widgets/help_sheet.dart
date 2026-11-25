@@ -33,13 +33,14 @@ class HelpSheet extends StatefulWidget {
 }
 
 class _HelpSheetState extends State<HelpSheet> {
-  bool _directionsFailed = false;
+  // What could not open, with the way to reach the workshop by hand; one at a time.
+  String? _failure;
 
-  // Maps takes over when it opens; when nothing takes the link, the sheet says so.
-  Future<void> _openDirections() async {
-    final opened = await openWorkshopMap(context);
+  // The app that takes the link takes over; when nothing takes it, the sheet says so.
+  Future<void> _open(Future<bool> Function(BuildContext) open, String failure) async {
+    final opened = await open(context);
     if (!mounted) return;
-    setState(() => _directionsFailed = !opened);
+    setState(() => _failure = opened ? null : failure);
   }
 
   @override
@@ -56,22 +57,29 @@ class _HelpSheetState extends State<HelpSheet> {
             const SizedBox(height: 16),
             _Header(onDone: () => Navigator.of(context).pop()),
             const SizedBox(height: 16),
-            // WhatsApp and the call still need the workshop's phone, which the design leaves open.
             InsetGroup(
               separatorIndent: 58,
               children: [
-                const IconRow(icon: Icons.chat_bubble_outline_rounded, title: AppConstants.helpWhatsApp),
-                const IconRow(icon: Icons.phone_outlined, title: AppConstants.helpCall),
+                IconRow(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: AppConstants.helpWhatsApp,
+                  onTap: () => _open(openWorkshopWhatsApp, AppConstants.whatsAppFailed),
+                ),
+                IconRow(
+                  icon: Icons.phone_outlined,
+                  title: AppConstants.helpCall,
+                  onTap: () => _open(callWorkshop, AppConstants.callFailed),
+                ),
                 IconRow(
                   icon: Icons.location_on_outlined,
                   title: AppConstants.helpDirections,
-                  onTap: _openDirections,
+                  onTap: () => _open(openWorkshopMap, AppConstants.directionsFailed),
                 ),
               ],
             ),
-            if (_directionsFailed) ...[
+            if (_failure case final failure?) ...[
               const SizedBox(height: 10),
-              const FormAlert(AppConstants.directionsFailed),
+              FormAlert(failure),
             ],
             const SizedBox(height: 16),
             Padding(
